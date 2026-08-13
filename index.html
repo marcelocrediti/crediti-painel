@@ -7,76 +7,290 @@
   <title>Crediti IA Painel</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-  <div class="app-shell">
+
+  <!-- LOGIN -->
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-brand">CREDITI IA</div>
+
+      <p class="eyebrow">PAINEL INTERNO</p>
+
+      <h1>Acesso ao painel</h1>
+
+      <p class="login-subtitle">
+        Digite sua senha numérica para continuar.
+      </p>
+
+      <input
+        id="pinInput"
+        class="pin-input"
+        type="password"
+        inputmode="numeric"
+        autocomplete="current-password"
+        placeholder="••••••••"
+        maxlength="12"
+      />
+
+      <button
+        id="loginBtn"
+        class="primary-btn login-btn"
+      >
+        ENTRAR
+      </button>
+
+      <div
+        id="loginError"
+        class="login-error"
+      ></div>
+    </div>
+  </section>
+
+  <!-- PAINEL -->
+  <div
+    id="appShell"
+    class="app-shell hidden"
+  >
+
     <aside class="sidebar">
-      <div class="brand">CREDITI IA</div>
+
+      <div class="brand">
+        CREDITI IA
+      </div>
+
       <nav>
-        <button class="nav-item active" data-view="dashboard">Dashboard</button>
-        <button class="nav-item" data-view="leads">Clientes / Leads</button>
+        <button
+          class="nav-item active"
+          data-view="dashboard"
+        >
+          Dashboard
+        </button>
+
+        <button
+          class="nav-item"
+          data-view="leads"
+        >
+          Clientes / Leads
+        </button>
       </nav>
-      <div class="sidebar-foot">Painel interno</div>
+
+      <div class="sidebar-foot">
+
+        <span>
+          Painel interno
+        </span>
+
+        <button
+          id="logoutBtn"
+          class="logout-btn"
+        >
+          Sair
+        </button>
+
+      </div>
+
     </aside>
 
     <main class="content">
+
       <header class="topbar">
+
         <div>
-          <p class="eyebrow">CREDITI IA</p>
-          <h1 id="pageTitle">Dashboard</h1>
+          <p class="eyebrow">
+            CREDITI IA
+          </p>
+
+          <h1 id="pageTitle">
+            Dashboard
+          </h1>
         </div>
-        <button id="refreshBtn" class="secondary-btn">Atualizar</button>
+
+        <button
+          id="refreshBtn"
+          class="secondary-btn"
+        >
+          Atualizar
+        </button>
+
       </header>
 
-      <section id="dashboardView" class="view active">
+      <!-- DASHBOARD -->
+      <section
+        id="dashboardView"
+        class="view active"
+      >
+
         <div class="cards">
-          <article class="metric-card"><span>Total de leads</span><strong id="metricTotal">0</strong></article>
-          <article class="metric-card"><span>Hoje</span><strong id="metricToday">0</strong></article>
-          <article class="metric-card"><span>Em atendimento</span><strong id="metricOpen">0</strong></article>
-          <article class="metric-card"><span>Encaminhados</span><strong id="metricForwarded">0</strong></article>
+
+          <article class="metric-card">
+            <span>
+              Total de leads
+            </span>
+
+            <strong id="metricTotal">
+              0
+            </strong>
+          </article>
+
+          <article class="metric-card">
+            <span>
+              Hoje
+            </span>
+
+            <strong id="metricToday">
+              0
+            </strong>
+          </article>
+
+          <article class="metric-card">
+            <span>
+              Em atendimento
+            </span>
+
+            <strong id="metricOpen">
+              0
+            </strong>
+          </article>
+
+          <article class="metric-card">
+            <span>
+              Encaminhados
+            </span>
+
+            <strong id="metricForwarded">
+              0
+            </strong>
+          </article>
+
         </div>
 
         <div class="panel-grid">
+
           <section class="panel">
+
             <div class="panel-head">
+
               <div>
-                <h2>Leads recentes</h2>
-                <p>Últimos atendimentos recebidos pela Crediti IA.</p>
+                <h2>
+                  Leads recentes
+                </h2>
+
+                <p>
+                  Últimos atendimentos recebidos pela Crediti IA.
+                </p>
               </div>
+
             </div>
-            <div id="recentList" class="recent-list"></div>
+
+            <div
+              id="recentList"
+              class="recent-list"
+            ></div>
+
           </section>
 
           <section class="panel">
+
             <div class="panel-head">
+
               <div>
-                <h2>Produtos mais procurados</h2>
-                <p>Visão rápida por interesse.</p>
+                <h2>
+                  Produtos mais procurados
+                </h2>
+
+                <p>
+                  Visão rápida por interesse.
+                </p>
               </div>
+
             </div>
-            <div id="productsRanking" class="ranking"></div>
+
+            <div
+              id="productsRanking"
+              class="ranking"
+            ></div>
+
           </section>
+
         </div>
+
       </section>
 
-      <section id="leadsView" class="view">
+      <!-- CLIENTES / LEADS -->
+      <section
+        id="leadsView"
+        class="view"
+      >
+
         <section class="panel">
+
           <div class="filters">
-            <input id="searchInput" type="search" placeholder="Buscar por nome, telefone ou cidade" />
+
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Buscar por nome, telefone ou cidade"
+            />
+
             <select id="productFilter">
-              <option value="">Todos os produtos</option>
+              <option value="">
+                Todos os produtos
+              </option>
             </select>
+
             <select id="statusFilter">
-              <option value="">Todos os status</option>
-              <option value="novo">Novo</option>
-              <option value="dados_coletados">Dados coletados</option>
-              <option value="em_atendimento">Em atendimento</option>
-              <option value="encaminhado">Encaminhado</option>
+
+              <option value="">
+                Todos os status
+              </option>
+
+              <option value="novo">
+                Novo
+              </option>
+
+              <option value="dados_coletados">
+                Dados coletados
+              </option>
+
+              <option value="em_atendimento">
+                Em atendimento
+              </option>
+
+              <option value="encaminhado">
+                Encaminhado
+              </option>
+
+              <option value="documentacao">
+                Documentação
+              </option>
+
+              <option value="proposta_enviada">
+                Proposta enviada
+              </option>
+
+              <option value="aprovado">
+                Aprovado
+              </option>
+
+              <option value="nao_aprovado">
+                Não aprovado
+              </option>
+
+              <option value="finalizado">
+                Finalizado
+              </option>
+
             </select>
+
           </div>
 
           <div class="table-wrap">
+
             <table>
+
               <thead>
+
                 <tr>
                   <th>Cliente</th>
                   <th>Telefone</th>
@@ -86,34 +300,238 @@
                   <th>Data</th>
                   <th></th>
                 </tr>
+
               </thead>
+
               <tbody id="leadsTableBody"></tbody>
+
             </table>
+
           </div>
 
-          <div id="emptyState" class="empty hidden">Nenhum lead encontrado.</div>
+          <div
+            id="emptyState"
+            class="empty hidden"
+          >
+            Nenhum lead encontrado.
+          </div>
+
         </section>
+
       </section>
+
     </main>
+
   </div>
 
+  <!-- FICHA DO CLIENTE -->
   <dialog id="leadDialog">
-    <button id="closeDialog" class="dialog-close">×</button>
+
+    <button
+      id="closeDialog"
+      class="dialog-close"
+    >
+      ×
+    </button>
+
     <div class="dialog-content">
-      <p class="eyebrow">FICHA DO CLIENTE</p>
-      <h2 id="detailName">Cliente</h2>
-      <div class="detail-grid">
-        <div><span>Telefone</span><strong id="detailPhone">-</strong></div>
-        <div><span>Cidade</span><strong id="detailCity">-</strong></div>
-        <div><span>Produto</span><strong id="detailProduct">-</strong></div>
-        <div><span>Status</span><strong id="detailStatus">-</strong></div>
-        <div><span>Origem</span><strong id="detailOrigin">-</strong></div>
-        <div><span>Data</span><strong id="detailDate">-</strong></div>
+
+      <p class="eyebrow">
+        FICHA DO CLIENTE
+      </p>
+
+      <h2 id="detailName">
+        Cliente
+      </h2>
+
+      <div class="edit-grid">
+
+        <label>
+
+          <span>
+            Nome
+          </span>
+
+          <input
+            id="editName"
+            type="text"
+          />
+
+        </label>
+
+        <label>
+
+          <span>
+            Telefone
+          </span>
+
+          <input
+            id="editPhone"
+            type="text"
+          />
+
+        </label>
+
+        <label>
+
+          <span>
+            Cidade
+          </span>
+
+          <input
+            id="editCity"
+            type="text"
+          />
+
+        </label>
+
+        <label>
+
+          <span>
+            Produto
+          </span>
+
+          <input
+            id="editProduct"
+            type="text"
+          />
+
+        </label>
+
+        <label>
+
+          <span>
+            Status
+          </span>
+
+          <select id="editStatus">
+
+            <option value="novo">
+              Novo
+            </option>
+
+            <option value="dados_coletados">
+              Dados coletados
+            </option>
+
+            <option value="em_atendimento">
+              Em atendimento
+            </option>
+
+            <option value="encaminhado">
+              Encaminhado
+            </option>
+
+            <option value="documentacao">
+              Documentação
+            </option>
+
+            <option value="proposta_enviada">
+              Proposta enviada
+            </option>
+
+            <option value="aprovado">
+              Aprovado
+            </option>
+
+            <option value="nao_aprovado">
+              Não aprovado
+            </option>
+
+            <option value="finalizado">
+              Finalizado
+            </option>
+
+          </select>
+
+        </label>
+
+        <div class="read-only-field">
+
+          <span>
+            Origem
+          </span>
+
+          <strong id="detailOrigin">
+            -
+          </strong>
+
+        </div>
+
+        <div class="read-only-field full">
+
+          <span>
+            Data
+          </span>
+
+          <strong id="detailDate">
+            -
+          </strong>
+
+        </div>
+
       </div>
-      <a id="whatsappLink" class="primary-btn" target="_blank" rel="noopener">Abrir WhatsApp</a>
+
+      <!-- OBSERVAÇÕES -->
+      <label class="observation-box">
+
+        <span>
+          Observações
+        </span>
+
+        <textarea
+          id="leadNotes"
+          rows="5"
+          placeholder="Digite aqui suas observações sobre o atendimento..."
+        ></textarea>
+
+      </label>
+
+      <div
+        id="dialogMessage"
+        class="dialog-message"
+      ></div>
+
+      <!-- AÇÕES -->
+      <div class="dialog-actions">
+
+        <a
+          id="whatsappLink"
+          class="primary-btn"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Abrir WhatsApp
+        </a>
+
+        <button
+          id="saveNotesBtn"
+          class="notes-btn"
+        >
+          Salvar observação
+        </button>
+
+        <button
+          id="saveLeadBtn"
+          class="secondary-action-btn"
+        >
+          Salvar alterações
+        </button>
+
+        <button
+          id="deleteLeadBtn"
+          class="danger-btn"
+        >
+          Apagar lead
+        </button>
+
+      </div>
+
     </div>
+
   </dialog>
 
   <script src="app.js"></script>
+
 </body>
 </html>
