@@ -1,9 +1,17 @@
-const SUPABASE_BASE = "https://vgdtywdpywezrwlrsawq.supabase.co";
-const SUPABASE_URL = `${SUPABASE_BASE}/rest/v1`;
-const SUPABASE_AUTH_URL = `${SUPABASE_BASE}/auth/v1`;
+const SUPABASE_BASE =
+  "https://vgdtywdpywezrwlrsawq.supabase.co";
+
+const SUPABASE_URL =
+  `${SUPABASE_BASE}/rest/v1`;
+
+const SUPABASE_AUTH_URL =
+  `${SUPABASE_BASE}/auth/v1`;
 
 const SUPABASE_KEY =
   "sb_publishable_dmoTPKmglghAohv0MrRA9A_2zlUYhER";
+
+const PANEL_URL =
+  "https://marcelocrediti.github.io/crediti-painel/";
 
 let allLeads = [];
 let currentLeadId = null;
@@ -16,146 +24,241 @@ let refreshToken =
 
 let recoveryMode = false;
 
-const $ = (id) => document.getElementById(id);
+const $ = (id) =>
+  document.getElementById(id);
 
-/* =========================
+
+/* =========================================================
    UTILIDADES
-========================= */
+========================================================= */
 
 function fmtDate(value) {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
+  if (!value) {
     return "-";
   }
 
-  return date.toLocaleString("pt-BR");
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "-";
+  }
+
+  return date.toLocaleString(
+    "pt-BR"
+  );
 }
+
 
 function normalizeStatus(status) {
   const map = {
-    novo: "Novo",
-    dados_coletados: "Dados coletados",
-    em_atendimento: "Em atendimento",
-    encaminhado: "Encaminhado",
-    documentacao: "Documentação",
-    proposta_enviada: "Proposta enviada",
-    aprovado: "Aprovado",
-    nao_aprovado: "Não aprovado",
-    finalizado: "Finalizado"
+    novo:
+      "Novo",
+
+    dados_coletados:
+      "Dados coletados",
+
+    em_atendimento:
+      "Em atendimento",
+
+    encaminhado:
+      "Encaminhado",
+
+    documentacao:
+      "Documentação",
+
+    proposta_enviada:
+      "Proposta enviada",
+
+    aprovado:
+      "Aprovado",
+
+    nao_aprovado:
+      "Não aprovado",
+
+    finalizado:
+      "Finalizado"
   };
 
-  return map[status] || status || "Novo";
+  return (
+    map[status] ||
+    status ||
+    "Novo"
+  );
 }
+
 
 function escapeHtml(value) {
   return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 }
+
 
 function escapeAttr(value) {
   return escapeHtml(value);
 }
 
-function authHeaders(extra = {}) {
+
+function authHeaders(
+  extra = {}
+) {
   return {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${accessToken}`,
+    apikey:
+      SUPABASE_KEY,
+
+    Authorization:
+      `Bearer ${accessToken}`,
+
     ...extra
   };
 }
 
+
 function clearLoginMessages() {
   if ($("loginError")) {
-    $("loginError").textContent = "";
+    $("loginError").textContent =
+      "";
   }
 
   if ($("loginSuccess")) {
-    $("loginSuccess").textContent = "";
+    $("loginSuccess").textContent =
+      "";
   }
 }
 
-/* =========================
+
+/* =========================================================
    TELAS
-========================= */
+========================================================= */
 
 function showLogin() {
-  $("loginScreen").classList.remove("hidden");
-  $("appShell").classList.add("hidden");
+  $("loginScreen")
+    .classList
+    .remove("hidden");
+
+  $("appShell")
+    .classList
+    .add("hidden");
 }
+
 
 function showApp() {
-  $("loginScreen").classList.add("hidden");
-  $("appShell").classList.remove("hidden");
+  $("loginScreen")
+    .classList
+    .add("hidden");
+
+  $("appShell")
+    .classList
+    .remove("hidden");
 }
 
-/* =========================
-   LOGIN NORMAL
-========================= */
+
+/* =========================================================
+   LOGIN
+========================================================= */
 
 async function login() {
   clearLoginMessages();
 
-  const email = $("emailInput").value.trim();
-  const password = $("passwordInput").value;
+  const email =
+    $("emailInput")
+      .value
+      .trim();
+
+  const password =
+    $("passwordInput")
+      .value;
 
   if (!email) {
     $("loginError").textContent =
       "Digite seu e-mail.";
+
     return;
   }
 
   if (!password) {
     $("loginError").textContent =
       "Digite sua senha.";
+
     return;
   }
 
-  $("loginBtn").disabled = true;
+  $("loginBtn").disabled =
+    true;
+
   $("loginBtn").textContent =
     "Entrando...";
 
   try {
-    const response = await fetch(
-      `${SUPABASE_AUTH_URL}/token?grant_type=password`,
-      {
-        method: "POST",
+    const response =
+      await fetch(
+        `${SUPABASE_AUTH_URL}/token?grant_type=password`,
+        {
+          method:
+            "POST",
 
-        headers: {
-          apikey: SUPABASE_KEY,
-          "Content-Type": "application/json"
-        },
+          headers: {
+            apikey:
+              SUPABASE_KEY,
 
-        body: JSON.stringify({
-          email,
-          password
-        })
-      }
-    );
+            "Content-Type":
+              "application/json"
+          },
 
-    const data = await response.json();
+          body:
+            JSON.stringify({
+              email,
+              password
+            })
+        }
+      );
+
+    const data =
+      await response.json();
 
     if (
       !response.ok ||
       !data.access_token
     ) {
-      console.error(data);
+      console.error(
+        "Erro login:",
+        data
+      );
 
       throw new Error(
-        data.error_description ||
-        data.msg ||
         "Login inválido"
       );
     }
 
-    accessToken = data.access_token;
-    refreshToken = data.refresh_token || "";
+    accessToken =
+      data.access_token;
+
+    refreshToken =
+      data.refresh_token ||
+      "";
 
     sessionStorage.setItem(
       "crediti_access_token",
@@ -169,7 +272,8 @@ async function login() {
       );
     }
 
-    $("passwordInput").value = "";
+    $("passwordInput").value =
+      "";
 
     showApp();
 
@@ -180,61 +284,95 @@ async function login() {
 
     $("loginError").textContent =
       "E-mail ou senha incorretos.";
+
   } finally {
-    $("loginBtn").disabled = false;
+    $("loginBtn").disabled =
+      false;
+
     $("loginBtn").textContent =
       "ENTRAR";
   }
 }
 
-/* =========================
+
+/* =========================================================
    ESQUECI MINHA SENHA
-========================= */
+========================================================= */
 
 async function forgotPassword() {
   clearLoginMessages();
 
   const email =
-    $("emailInput").value.trim();
+    $("emailInput")
+      .value
+      .trim();
 
   if (!email) {
     $("loginError").textContent =
       "Digite seu e-mail primeiro.";
+
     return;
   }
 
-  $("forgotPasswordBtn").disabled = true;
+  $("forgotPasswordBtn").disabled =
+    true;
+
   $("forgotPasswordBtn").textContent =
     "Enviando...";
 
   try {
-    const redirectTo =
-      `${window.location.origin}${window.location.pathname}`;
 
-    const response = await fetch(
-      `${SUPABASE_AUTH_URL}/recover`,
-      {
-        method: "POST",
+    /*
+      IMPORTANTE:
 
-        headers: {
-          apikey: SUPABASE_KEY,
-          "Content-Type": "application/json"
-        },
+      redirect_to precisa ser enviado
+      na própria URL da requisição.
 
-        body: JSON.stringify({
-          email,
-          redirect_to: redirectTo
-        })
-      }
-    );
+      Estamos usando o endereço exato
+      do painel para evitar o retorno
+      para marcelocrediti.github.io/
+      sem /crediti-painel/.
+    */
+
+    const recoveryUrl =
+      `${SUPABASE_AUTH_URL}/recover?redirect_to=${encodeURIComponent(
+        PANEL_URL
+      )}`;
+
+    const response =
+      await fetch(
+        recoveryUrl,
+        {
+          method:
+            "POST",
+
+          headers: {
+            apikey:
+              SUPABASE_KEY,
+
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              email
+            })
+        }
+      );
 
     if (!response.ok) {
       const errorText =
         await response.text();
 
-      console.error(errorText);
+      console.error(
+        "Erro recovery:",
+        errorText
+      );
 
-      throw new Error(errorText);
+      throw new Error(
+        errorText
+      );
     }
 
     $("loginSuccess").textContent =
@@ -245,119 +383,153 @@ async function forgotPassword() {
 
     $("loginError").textContent =
       "Não foi possível enviar o e-mail agora.";
+
   } finally {
-    $("forgotPasswordBtn").disabled = false;
+    $("forgotPasswordBtn").disabled =
+      false;
+
     $("forgotPasswordBtn").textContent =
       "Esqueci minha senha";
   }
 }
 
-/* =========================
-   DETECTAR LINK DE RECUPERAÇÃO
-========================= */
+
+/* =========================================================
+   DETECTAR RECUPERAÇÃO
+========================================================= */
 
 function checkRecoveryLink() {
-  const hashText =
+  const hash =
     window.location.hash
       .replace(/^#/, "");
 
-  if (!hashText) {
+  if (!hash) {
     return false;
   }
 
   const params =
-    new URLSearchParams(hashText);
+    new URLSearchParams(
+      hash
+    );
 
-  const hashAccessToken =
-    params.get("access_token");
+  const token =
+    params.get(
+      "access_token"
+    );
 
-  const hashRefreshToken =
-    params.get("refresh_token");
+  const newRefreshToken =
+    params.get(
+      "refresh_token"
+    );
 
   const type =
     params.get("type");
 
   /*
-    O link do Supabase normalmente vem como:
+    Links de recuperação do Supabase
+    normalmente retornam:
+
     #access_token=...
     &refresh_token=...
     &type=recovery
-
-    Mas também aceitamos o link quando há
-    access_token + refresh_token, para evitar
-    perder o modo de recuperação.
   */
 
-  const isRecovery =
-    Boolean(hashAccessToken) &&
-    (
-      type === "recovery" ||
-      Boolean(hashRefreshToken)
-    );
-
-  if (!isRecovery) {
+  if (
+    !token ||
+    type !== "recovery"
+  ) {
     return false;
   }
 
-  recoveryMode = true;
+  recoveryMode =
+    true;
 
   accessToken =
-    hashAccessToken;
+    token;
 
   refreshToken =
-    hashRefreshToken || "";
-
-  /*
-    Não salvamos essa sessão como login normal.
-    Ela será usada somente para alterar a senha.
-  */
+    newRefreshToken ||
+    "";
 
   prepareRecoveryScreen();
 
   return true;
 }
 
-/* =========================
-   TELA DE NOVA SENHA
-========================= */
+
+/* =========================================================
+   TELA NOVA SENHA
+========================================================= */
 
 function prepareRecoveryScreen() {
   showLogin();
 
   clearLoginMessages();
 
-  const emailField =
-    $("emailInput")
-      .closest(".login-field");
+  const emailInput =
+    $("emailInput");
 
-  if (emailField) {
-    emailField.classList.add("hidden");
+  if (emailInput) {
+    const emailField =
+      emailInput.closest(
+        ".login-field"
+      );
+
+    if (emailField) {
+      emailField.classList.add(
+        "hidden"
+      );
+    }
   }
 
-  $("forgotPasswordBtn")
-    .classList.add("hidden");
+  if (
+    $("forgotPasswordBtn")
+  ) {
+    $("forgotPasswordBtn")
+      .classList
+      .add("hidden");
+  }
 
-  document.querySelector(
-    ".login-card h1"
-  ).textContent =
-    "Criar nova senha";
+  const title =
+    document.querySelector(
+      ".login-card h1"
+    );
 
-  document.querySelector(
-    ".login-subtitle"
-  ).textContent =
-    "Digite abaixo a nova senha que deseja usar no painel.";
+  if (title) {
+    title.textContent =
+      "Criar nova senha";
+  }
 
-  const passwordLabel =
+  const subtitle =
+    document.querySelector(
+      ".login-subtitle"
+    );
+
+  if (subtitle) {
+    subtitle.textContent =
+      "Digite abaixo a nova senha que deseja usar no painel.";
+  }
+
+  const passwordField =
     $("passwordInput")
-      .closest(".login-field")
-      .querySelector("span");
+      .closest(
+        ".login-field"
+      );
 
-  if (passwordLabel) {
-    passwordLabel.textContent =
-      "Nova senha";
+  if (passwordField) {
+    const label =
+      passwordField.querySelector(
+        "span"
+      );
+
+    if (label) {
+      label.textContent =
+        "Nova senha";
+    }
   }
 
-  $("passwordInput").value = "";
+  $("passwordInput").value =
+    "";
 
   $("passwordInput").placeholder =
     "Digite sua nova senha";
@@ -372,76 +544,99 @@ function prepareRecoveryScreen() {
     "SALVAR NOVA SENHA";
 
   $("loginSuccess").textContent =
-    "Link de recuperação confirmado.";
+    "Link confirmado. Agora crie sua nova senha.";
 
-  setTimeout(() => {
-    $("passwordInput").focus();
-  }, 100);
+  setTimeout(
+    () => {
+      $("passwordInput")
+        .focus();
+    },
+    100
+  );
 }
 
-/* =========================
+
+/* =========================================================
    SALVAR NOVA SENHA
-========================= */
+========================================================= */
 
 async function updateRecoveredPassword() {
   clearLoginMessages();
 
   const password =
-    $("passwordInput").value;
+    $("passwordInput")
+      .value;
 
   if (!password) {
     $("loginError").textContent =
       "Digite sua nova senha.";
+
     return;
   }
 
-  if (password.length < 6) {
+  if (
+    password.length < 6
+  ) {
     $("loginError").textContent =
       "A senha precisa ter pelo menos 6 caracteres.";
+
     return;
   }
 
-  $("loginBtn").disabled = true;
+  $("loginBtn").disabled =
+    true;
+
   $("loginBtn").textContent =
     "Salvando...";
 
   try {
-    const response = await fetch(
-      `${SUPABASE_AUTH_URL}/user`,
-      {
-        method: "PUT",
+    const response =
+      await fetch(
+        `${SUPABASE_AUTH_URL}/user`,
+        {
+          method:
+            "PUT",
 
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization:
-            `Bearer ${accessToken}`,
-          "Content-Type":
-            "application/json"
-        },
+          headers: {
+            apikey:
+              SUPABASE_KEY,
 
-        body: JSON.stringify({
-          password
-        })
-      }
-    );
+            Authorization:
+              `Bearer ${accessToken}`,
+
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              password
+            })
+        }
+      );
 
     const data =
       await response.json();
 
     if (!response.ok) {
-      console.error(data);
+      console.error(
+        "Erro update senha:",
+        data
+      );
 
       throw new Error(
-        data.msg ||
-        data.error_description ||
         "Erro ao alterar senha"
       );
     }
 
-    recoveryMode = false;
+    recoveryMode =
+      false;
 
-    accessToken = "";
-    refreshToken = "";
+    accessToken =
+      "";
+
+    refreshToken =
+      "";
 
     sessionStorage.removeItem(
       "crediti_access_token"
@@ -451,33 +646,35 @@ async function updateRecoveredPassword() {
       "crediti_refresh_token"
     );
 
-    /*
-      Remove o token da barra de endereço
-      somente depois de concluir a alteração.
-    */
-
     window.history.replaceState(
       {},
       document.title,
-      window.location.pathname
+      PANEL_URL
     );
 
-    $("loginError").textContent = "";
-
     $("loginSuccess").textContent =
-      "Senha alterada com sucesso. Aguarde...";
+      "Senha alterada com sucesso.";
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 1800);
+    $("loginError").textContent =
+      "";
+
+    setTimeout(
+      () => {
+        window.location.href =
+          PANEL_URL;
+      },
+      1600
+    );
 
   } catch (error) {
     console.error(error);
 
     $("loginError").textContent =
-      "Não foi possível alterar a senha. Solicite um novo link.";
+      "Não foi possível alterar sua senha. Solicite um novo link.";
+
   } finally {
-    $("loginBtn").disabled = false;
+    $("loginBtn").disabled =
+      false;
 
     if (recoveryMode) {
       $("loginBtn").textContent =
@@ -486,13 +683,23 @@ async function updateRecoveredPassword() {
   }
 }
 
-/* =========================
-   SAIR
-========================= */
+
+/* =========================================================
+   LOGOUT
+========================================================= */
 
 function logout() {
-  accessToken = "";
-  refreshToken = "";
+  accessToken =
+    "";
+
+  refreshToken =
+    "";
+
+  allLeads =
+    [];
+
+  currentLeadId =
+    null;
 
   sessionStorage.removeItem(
     "crediti_access_token"
@@ -502,28 +709,30 @@ function logout() {
     "crediti_refresh_token"
   );
 
-  allLeads = [];
-  currentLeadId = null;
-
-  window.location.reload();
+  window.location.href =
+    PANEL_URL;
 }
 
-/* =========================
+
+/* =========================================================
    CARREGAR LEADS
-========================= */
+========================================================= */
 
 async function loadLeads() {
   if (!accessToken) {
     showLogin();
+
     return;
   }
 
-  const response = await fetch(
-    `${SUPABASE_URL}/leads?select=*&order=created_at.desc`,
-    {
-      headers: authHeaders()
-    }
-  );
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/leads?select=*&order=created_at.desc`,
+      {
+        headers:
+          authHeaders()
+      }
+    );
 
   if (
     response.status === 401 ||
@@ -531,9 +740,7 @@ async function loadLeads() {
   ) {
     logout();
 
-    throw new Error(
-      "Sessão expirada."
-    );
+    return;
   }
 
   if (!response.ok) {
@@ -550,18 +757,22 @@ async function loadLeads() {
   renderLeads();
 }
 
-/* =========================
+
+/* =========================================================
    DASHBOARD
-========================= */
+========================================================= */
 
 function renderDashboard() {
   $("metricTotal").textContent =
     allLeads.length;
 
-  const today = new Date();
+  const today =
+    new Date();
 
-  const sameDay = (value) => {
-    if (!value) return false;
+  function sameDay(value) {
+    if (!value) {
+      return false;
+    }
 
     const date =
       new Date(value);
@@ -577,17 +788,21 @@ function renderDashboard() {
     return (
       date.getDate() ===
         today.getDate() &&
+
       date.getMonth() ===
         today.getMonth() &&
+
       date.getFullYear() ===
         today.getFullYear()
     );
-  };
+  }
 
   $("metricToday").textContent =
     allLeads.filter(
       (lead) =>
-        sameDay(lead.created_at)
+        sameDay(
+          lead.created_at
+        )
     ).length;
 
   $("metricOpen").textContent =
@@ -600,7 +815,8 @@ function renderDashboard() {
           "documentacao",
           "proposta_enviada"
         ].includes(
-          lead.status || "novo"
+          lead.status ||
+          "novo"
         )
     ).length;
 
@@ -612,13 +828,17 @@ function renderDashboard() {
     ).length;
 
   const recent =
-    allLeads.slice(0, 6);
+    allLeads.slice(
+      0,
+      6
+    );
 
   $("recentList").innerHTML =
     recent
       .map(
         (lead) => `
           <div class="recent-item">
+
             <div>
 
               <strong>
@@ -630,7 +850,8 @@ function renderDashboard() {
 
               <small>
                 ${escapeHtml(
-                  lead.cidade || "-"
+                  lead.cidade ||
+                  "-"
                 )}
                 ·
                 ${escapeHtml(
@@ -653,7 +874,8 @@ function renderDashboard() {
       .join("") ||
     '<div class="empty">Nenhum lead ainda.</div>';
 
-  const counts = {};
+  const counts =
+    {};
 
   allLeads.forEach(
     (lead) => {
@@ -662,18 +884,25 @@ function renderDashboard() {
         "Não informado";
 
       counts[product] =
-        (counts[product] || 0) +
-        1;
+        (
+          counts[product] ||
+          0
+        ) + 1;
     }
   );
 
   $("productsRanking").innerHTML =
-    Object.entries(counts)
+    Object.entries(
+      counts
+    )
       .sort(
         (a, b) =>
           b[1] - a[1]
       )
-      .slice(0, 6)
+      .slice(
+        0,
+        6
+      )
       .map(
         ([product, count]) => `
           <div class="rank-item">
@@ -703,13 +932,15 @@ function renderDashboard() {
     '<div class="empty">Sem dados.</div>';
 }
 
-/* =========================
-   FILTRO DE PRODUTOS
-========================= */
+
+/* =========================================================
+   PRODUTOS
+========================================================= */
 
 function fillProductFilter() {
   const current =
-    $("productFilter").value;
+    $("productFilter")
+      .value;
 
   const products = [
     ...new Set(
@@ -727,11 +958,9 @@ function fillProductFilter() {
     products
       .map(
         (product) => `
-          <option
-            value="${escapeAttr(
-              product
-            )}"
-          >
+          <option value="${escapeAttr(
+            product
+          )}">
             ${escapeHtml(
               product
             )}
@@ -744,9 +973,10 @@ function fillProductFilter() {
     current;
 }
 
-/* =========================
-   LISTA DE LEADS
-========================= */
+
+/* =========================================================
+   RENDERIZAR LEADS
+========================================================= */
 
 function renderLeads() {
   const search =
@@ -756,22 +986,26 @@ function renderLeads() {
       .toLowerCase();
 
   const product =
-    $("productFilter").value;
+    $("productFilter")
+      .value;
 
   const status =
-    $("statusFilter").value;
+    $("statusFilter")
+      .value;
 
   const filtered =
     allLeads.filter(
       (lead) => {
+
         const haystack =
           `
-            ${lead.nome || ""}
-            ${lead.telefone || ""}
-            ${lead.cidade || ""}
-            ${lead.produto_interesse || ""}
-            ${lead.observacao || ""}
-          `.toLowerCase();
+          ${lead.nome || ""}
+          ${lead.telefone || ""}
+          ${lead.cidade || ""}
+          ${lead.produto_interesse || ""}
+          ${lead.observacao || ""}
+          `
+            .toLowerCase();
 
         return (
           (
@@ -780,11 +1014,13 @@ function renderLeads() {
               search
             )
           ) &&
+
           (
             !product ||
             lead.produto_interesse ===
               product
           ) &&
+
           (
             !status ||
             lead.status ===
@@ -811,13 +1047,15 @@ function renderLeads() {
 
             <td>
               ${escapeHtml(
-                lead.telefone || "-"
+                lead.telefone ||
+                "-"
               )}
             </td>
 
             <td>
               ${escapeHtml(
-                lead.cidade || "-"
+                lead.cidade ||
+                "-"
               )}
             </td>
 
@@ -845,12 +1083,15 @@ function renderLeads() {
             </td>
 
             <td>
+
               <button
                 class="view-btn"
                 data-id="${lead.id}"
+                type="button"
               >
                 Ver ficha
               </button>
+
             </td>
 
           </tr>
@@ -862,7 +1103,8 @@ function renderLeads() {
     .classList
     .toggle(
       "hidden",
-      filtered.length > 0
+      filtered.length >
+        0
     );
 
   document
@@ -871,9 +1113,11 @@ function renderLeads() {
     )
     .forEach(
       (button) => {
+
         button.addEventListener(
           "click",
           () => {
+
             openLead(
               button.dataset.id
             );
@@ -883,6 +1127,7 @@ function renderLeads() {
     );
 }
 
+
 function findLeadById(id) {
   return allLeads.find(
     (lead) =>
@@ -891,37 +1136,45 @@ function findLeadById(id) {
   );
 }
 
-/* =========================
+
+/* =========================================================
    ABRIR FICHA
-========================= */
+========================================================= */
 
 function openLead(id) {
   const lead =
     findLeadById(id);
 
-  if (!lead) return;
+  if (!lead) {
+    return;
+  }
 
   currentLeadId =
     lead.id;
 
   $("detailName").textContent =
-    lead.nome || "Cliente";
+    lead.nome ||
+    "Cliente";
 
   $("editName").value =
-    lead.nome || "";
+    lead.nome ||
+    "";
 
   $("editPhone").value =
-    lead.telefone || "";
+    lead.telefone ||
+    "";
 
   $("editCity").value =
-    lead.cidade || "";
+    lead.cidade ||
+    "";
 
   $("editProduct").value =
     lead.produto_interesse ||
     "";
 
   $("editStatus").value =
-    lead.status || "novo";
+    lead.status ||
+    "novo";
 
   $("detailOrigin").textContent =
     lead.origem ||
@@ -933,7 +1186,8 @@ function openLead(id) {
     );
 
   $("leadNotes").value =
-    lead.observacao || "";
+    lead.observacao ||
+    "";
 
   configureWhatsApp(
     lead.telefone
@@ -943,32 +1197,47 @@ function openLead(id) {
     .showModal();
 }
 
-/* =========================
-   WHATSAPP
-========================= */
 
-function normalizeBrazilPhone(phone) {
+/* =========================================================
+   WHATSAPP
+========================================================= */
+
+function normalizeBrazilPhone(
+  phone
+) {
   let digits =
-    String(phone || "")
-      .replace(/\D/g, "");
+    String(
+      phone ||
+      ""
+    )
+      .replace(
+        /\D/g,
+        ""
+      );
 
   if (!digits) {
     return "";
   }
 
   if (
-    digits.startsWith("55") &&
+    digits.startsWith(
+      "55"
+    ) &&
     (
-      digits.length === 12 ||
-      digits.length === 13
+      digits.length ===
+        12 ||
+      digits.length ===
+        13
     )
   ) {
     return digits;
   }
 
   if (
-    digits.length === 10 ||
-    digits.length === 11
+    digits.length ===
+      10 ||
+    digits.length ===
+      11
   ) {
     return `55${digits}`;
   }
@@ -976,7 +1245,10 @@ function normalizeBrazilPhone(phone) {
   return "";
 }
 
-function configureWhatsApp(phone) {
+
+function configureWhatsApp(
+  phone
+) {
   const button =
     $("whatsappLink");
 
@@ -986,7 +1258,8 @@ function configureWhatsApp(phone) {
     );
 
   if (!number) {
-    button.href = "#";
+    button.href =
+      "#";
 
     button.onclick =
       (event) => {
@@ -1014,36 +1287,43 @@ function configureWhatsApp(phone) {
   button.rel =
     "noopener noreferrer";
 
-  button.onclick = null;
+  button.onclick =
+    null;
 }
 
-/* =========================
-   ATUALIZAR LEAD
-========================= */
+
+/* =========================================================
+   EDITAR LEAD
+========================================================= */
 
 async function updateLead(
   id,
   data
 ) {
-  const response = await fetch(
-    `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(
-      id
-    )}`,
-    {
-      method: "PATCH",
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(
+        id
+      )}`,
+      {
+        method:
+          "PATCH",
 
-      headers: authHeaders({
-        "Content-Type":
-          "application/json",
+        headers:
+          authHeaders({
+            "Content-Type":
+              "application/json",
 
-        Prefer:
-          "return=representation"
-      }),
+            Prefer:
+              "return=representation"
+          }),
 
-      body:
-        JSON.stringify(data)
-    }
-  );
+        body:
+          JSON.stringify(
+            data
+          )
+      }
+    );
 
   if (!response.ok) {
     throw new Error(
@@ -1054,9 +1334,11 @@ async function updateLead(
   return await response.json();
 }
 
+
 async function saveCurrentLead() {
   if (
-    currentLeadId === null
+    currentLeadId ===
+    null
   ) {
     return;
   }
@@ -1083,7 +1365,8 @@ async function saveCurrentLead() {
         .trim(),
 
     status:
-      $("editStatus").value,
+      $("editStatus")
+        .value,
 
     observacao:
       $("leadNotes")
@@ -1095,6 +1378,7 @@ async function saveCurrentLead() {
     alert(
       "O nome do cliente não pode ficar vazio."
     );
+
     return;
   }
 
@@ -1136,13 +1420,15 @@ async function saveCurrentLead() {
   }
 }
 
-/* =========================
+
+/* =========================================================
    OBSERVAÇÃO
-========================= */
+========================================================= */
 
 async function saveNotesOnly() {
   if (
-    currentLeadId === null
+    currentLeadId ===
+    null
   ) {
     return;
   }
@@ -1197,22 +1483,25 @@ async function saveNotesOnly() {
   }
 }
 
-/* =========================
-   APAGAR LEAD
-========================= */
+
+/* =========================================================
+   APAGAR
+========================================================= */
 
 async function deleteLead(id) {
-  const response = await fetch(
-    `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(
-      id
-    )}`,
-    {
-      method: "DELETE",
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(
+        id
+      )}`,
+      {
+        method:
+          "DELETE",
 
-      headers:
-        authHeaders()
-    }
-  );
+        headers:
+          authHeaders()
+      }
+    );
 
   if (!response.ok) {
     throw new Error(
@@ -1221,13 +1510,16 @@ async function deleteLead(id) {
   }
 }
 
+
 async function removeCurrentLead() {
   const lead =
     findLeadById(
       currentLeadId
     );
 
-  if (!lead) return;
+  if (!lead) {
+    return;
+  }
 
   const confirmed =
     window.confirm(
@@ -1243,9 +1535,11 @@ async function removeCurrentLead() {
       currentLeadId
     );
 
-    $("leadDialog").close();
+    $("leadDialog")
+      .close();
 
-    currentLeadId = null;
+    currentLeadId =
+      null;
 
     await loadLeads();
 
@@ -1258,11 +1552,14 @@ async function removeCurrentLead() {
   }
 }
 
-/* =========================
-   MENSAGEM DA FICHA
-========================= */
 
-function showDialogMessage(message) {
+/* =========================================================
+   MENSAGEM
+========================================================= */
+
+function showDialogMessage(
+  message
+) {
   $("dialogMessage").textContent =
     message;
 
@@ -1271,15 +1568,19 @@ function showDialogMessage(message) {
   );
 
   showDialogMessage.timer =
-    setTimeout(() => {
-      $("dialogMessage").textContent =
-        "";
-    }, 3000);
+    setTimeout(
+      () => {
+        $("dialogMessage").textContent =
+          "";
+      },
+      3000
+    );
 }
 
-/* =========================
+
+/* =========================================================
    NAVEGAÇÃO
-========================= */
+========================================================= */
 
 document
   .querySelectorAll(
@@ -1287,23 +1588,31 @@ document
   )
   .forEach(
     (button) => {
+
       button.addEventListener(
         "click",
         () => {
+
           document
             .querySelectorAll(
               ".nav-item"
             )
             .forEach(
-              (item) =>
-                item.classList.remove(
-                  "active"
-                )
+              (item) => {
+
+                item
+                  .classList
+                  .remove(
+                    "active"
+                  );
+              }
             );
 
-          button.classList.add(
-            "active"
-          );
+          button
+            .classList
+            .add(
+              "active"
+            );
 
           const view =
             button.dataset.view;
@@ -1313,18 +1622,25 @@ document
               ".view"
             )
             .forEach(
-              (item) =>
-                item.classList.remove(
-                  "active"
-                )
+              (item) => {
+
+                item
+                  .classList
+                  .remove(
+                    "active"
+                  );
+              }
             );
 
           $(`${view}View`)
             .classList
-            .add("active");
+            .add(
+              "active"
+            );
 
           $("pageTitle").textContent =
-            view === "dashboard"
+            view ===
+            "dashboard"
               ? "Dashboard"
               : "Clientes / Leads";
         }
@@ -1332,44 +1648,57 @@ document
     }
   );
 
-/* =========================
+
+/* =========================================================
    FILTROS
-========================= */
+========================================================= */
 
 [
   "searchInput",
   "productFilter",
   "statusFilter"
-].forEach((id) => {
-  $(id).addEventListener(
-    id === "searchInput"
-      ? "input"
-      : "change",
+].forEach(
+  (id) => {
 
-    renderLeads
-  );
-});
+    $(id).addEventListener(
+      id ===
+      "searchInput"
+        ? "input"
+        : "change",
 
-/* =========================
+      renderLeads
+    );
+  }
+);
+
+
+/* =========================================================
    EVENTOS
-========================= */
+========================================================= */
 
 $("refreshBtn")
   .addEventListener(
     "click",
     () => {
+
       loadLeads()
-        .catch(showError);
+        .catch(
+          showError
+        );
     }
   );
+
 
 $("closeDialog")
   .addEventListener(
     "click",
     () => {
-      $("leadDialog").close();
+
+      $("leadDialog")
+        .close();
     }
   );
+
 
 $("saveLeadBtn")
   .addEventListener(
@@ -1377,11 +1706,13 @@ $("saveLeadBtn")
     saveCurrentLead
   );
 
+
 $("saveNotesBtn")
   .addEventListener(
     "click",
     saveNotesOnly
   );
+
 
 $("deleteLeadBtn")
   .addEventListener(
@@ -1389,60 +1720,79 @@ $("deleteLeadBtn")
     removeCurrentLead
   );
 
+
 $("forgotPasswordBtn")
   .addEventListener(
     "click",
     forgotPassword
   );
 
+
 $("loginBtn")
   .addEventListener(
     "click",
     () => {
+
       if (recoveryMode) {
+
         updateRecoveredPassword();
+
       } else {
+
         login();
       }
     }
   );
 
+
 $("passwordInput")
   .addEventListener(
     "keydown",
     (event) => {
+
       if (
         event.key ===
         "Enter"
       ) {
-        if (recoveryMode) {
+
+        if (
+          recoveryMode
+        ) {
+
           updateRecoveredPassword();
+
         } else {
+
           login();
         }
       }
     }
   );
 
+
 $("emailInput")
   .addEventListener(
     "keydown",
     (event) => {
+
       if (
         event.key ===
         "Enter"
       ) {
+
         $("passwordInput")
           .focus();
       }
     }
   );
 
+
 $("logoutBtn")
   .addEventListener(
     "click",
     logout
   );
+
 
 function showError(error) {
   console.error(error);
@@ -1451,31 +1801,38 @@ function showError(error) {
     accessToken &&
     $("recentList")
   ) {
+
     $("recentList").innerHTML =
       '<div class="empty">Não foi possível carregar os leads.</div>';
   }
 }
 
-/* =========================
-   INICIALIZAÇÃO
-========================= */
+
+/* =========================================================
+   INICIAR
+========================================================= */
 
 const openedFromRecovery =
   checkRecoveryLink();
 
-if (openedFromRecovery) {
+if (
+  openedFromRecovery
+) {
 
   showLogin();
 
-} else if (accessToken) {
+} else if (
+  accessToken
+) {
 
   showApp();
 
   loadLeads()
-    .catch(showError);
+    .catch(
+      showError
+    );
 
 } else {
 
   showLogin();
-
 }
