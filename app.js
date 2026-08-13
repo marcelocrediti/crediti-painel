@@ -1,10 +1,20 @@
-const SUPABASE_URL = "https://vgdtywdpywezrwlrsawq.supabase.co/rest/v1";
-const SUPABASE_KEY = "sb_publishable_dmoTPKmglghAohv0MrRA9A_2zlUYhER";
+const SUPABASE_BASE = "https://vgdtywdpywezrwlrsawq.supabase.co";
+const SUPABASE_URL = `${SUPABASE_BASE}/rest/v1`;
+const SUPABASE_AUTH_URL = `${SUPABASE_BASE}/auth/v1`;
+
+const SUPABASE_KEY =
+  "sb_publishable_dmoTPKmglghAohv0MrRA9A_2zlUYhER";
+
+const ADMIN_EMAIL =
+  "info@creditisolucoes.com.br";
 
 let allLeads = [];
 let currentLeadId = null;
+let accessToken =
+  sessionStorage.getItem("crediti_access_token") || "";
 
-const $ = (id) => document.getElementById(id);
+const $ = (id) =>
+  document.getElementById(id);
 
 function fmtDate(value) {
   if (!value) return "-";
@@ -23,375 +33,558 @@ function normalizeStatus(status) {
     novo: "Novo",
     dados_coletados: "Dados coletados",
     em_atendimento: "Em atendimento",
-    encaminhado: "Encaminhado"
+    encaminhado: "Encaminhado",
+    documentacao: "Documentação",
+    proposta_enviada: "Proposta enviada",
+    aprovado: "Aprovado",
+    nao_aprovado: "Não aprovado",
+    finalizado: "Finalizado"
   };
 
   return map[status] || status || "Novo";
 }
 
-function getSupabaseHeaders(extra = {}) {
+function authHeaders(extra = {}) {
   return {
     apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
-    "Content-Type": "application/json",
+    Authorization: `Bearer ${accessToken}`,
     ...extra
   };
 }
 
+/* =========================
+   LOGIN
+========================= */
+
+function showLogin() {
+  $("loginScreen").classList.remove("hidden");
+  $("appShell").classList.add("hidden");
+
+  setTimeout(() => {
+    $("pinInput")?.focus();
+  }, 50);
+}
+
+function showApp() {
+  $("loginScreen").classList.add("hidden");
+  $("appShell").classList.remove("hidden");
+}
+
+async function loginWithPin() {
+  const pin =
+    $("pinInput").value.trim();
+
+  $("loginError").textContent = "";
+
+  if (!/^\d{6,12}$/.test(pin)) {
+    $("loginError").textContent =
+      "Digite sua senha numérica.";
+    return;
+  }
+
+  $("loginBtn").disabled = true;
+  $("loginBtn").textContent =
+    "Entrando...";
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_AUTH_URL}/token?grant_type=password`,
+      {
+        method: "POST",
+
+        headers: {
+          apikey: SUPABASE_KEY,
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          email: ADMIN_EMAIL,
+          password: pin
+        })
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.access_token
+    ) {
+      throw new Error(
+        "Senha incorreta."
+      );
+    }
+
+    accessToken =
+      data.access_token;
+
+    sessionStorage.setItem(
+      "crediti_access_token",
+      accessToken
+    );
+
+    $("pinInput").value = "";
+
+    showApp();
+
+    await loadLeads();
+  } catch (error) {
+    console.error(error);
+
+    $("loginError").textContent =
+      "Senha incorreta.";
+  } finally {
+    $("loginBtn").disabled = false;
+    $("loginBtn").textContent =
+      "ENTRAR";
+  }
+}
+
+function logout() {
+  accessToken = "";
+
+  sessionStorage.removeItem(
+    "crediti_access_token"
+  );
+
+  allLeads = [];
+
+  showLogin();
+}
+
+/* =========================
+   CARREGAR LEADS
+========================= */
+
 async function loadLeads() {
-  const res = await fetch(
+  if (!accessToken) {
+    showLogin();
+    return;
+  }
+
+  const response = await fetch(
     `${SUPABASE_URL}/leads?select=*&order=created_at.desc`,
     {
-      headers: getSupabaseHeaders()
+      headers: authHeaders()
     }
   );
 
-  if (!res.ok) {
-    throw new Error(await res.text());
+  if (
+    response.status === 401 ||
+    response.status === 403
+  ) {
+    logout();
+    throw new Error(
+      "Sessão expirada."
+    );
   }
 
-  allLeads = await res.json();
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
+    );
+  }
+
+  allLeads =
+    await response.json();
 
   renderDashboard();
   fillProductFilter();
   renderLeads();
 }
 
+/* =========================
+   DASHBOARD
+========================= */
+
 function renderDashboard() {
-  if ($("metricTotal")) {
-    $("metricTotal").textContent = allLeads.length;
-  }
+  $("metricTotal").textContent =
+    allLeads.length;
 
   const today = new Date();
 
-  const sameDay = (date) => {
-    if (!date) return false;
-
-    const x = new Date(date);
-
-    if (Number.isNaN(x.getTime())) {
-      return false;
-    }
+  const sameDay = (value) => {
+    const date =
+      new Date(value);
 
     return (
-      x.getDate() === today.getDate() &&
-      x.getMonth() === today.getMonth() &&
-      x.getFullYear() === today.getFullYear()
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
     );
   };
 
-  if ($("metricToday")) {
-    $("metricToday").textContent =
-      allLeads.filter((lead) => sameDay(lead.created_at)).length;
-  }
+  $("metricToday").textContent =
+    allLeads.filter(
+      (lead) =>
+        sameDay(lead.created_at)
+    ).length;
 
-  if ($("metricOpen")) {
-    $("metricOpen").textContent =
-      allLeads.filter(
-        (lead) =>
-          lead.status === "em_atendimento" ||
-          lead.status === "dados_coletados" ||
-          lead.status === "novo" ||
-          !lead.status
-      ).length;
-  }
+  $("metricOpen").textContent =
+    allLeads.filter((lead) =>
+      [
+        "novo",
+        "dados_coletados",
+        "em_atendimento",
+        "documentacao",
+        "proposta_enviada"
+      ].includes(
+        lead.status || "novo"
+      )
+    ).length;
 
-  if ($("metricForwarded")) {
-    $("metricForwarded").textContent =
-      allLeads.filter(
-        (lead) => lead.status === "encaminhado"
-      ).length;
-  }
+  $("metricForwarded").textContent =
+    allLeads.filter(
+      (lead) =>
+        lead.status ===
+        "encaminhado"
+    ).length;
 
-  const recent = allLeads.slice(0, 6);
+  const recent =
+    allLeads.slice(0, 6);
 
-  if ($("recentList")) {
-    $("recentList").innerHTML =
-      recent
-        .map(
-          (lead) => `
-            <div class="recent-item">
-              <div>
-                <strong>${escapeHtml(lead.nome || "Sem nome")}</strong>
+  $("recentList").innerHTML =
+    recent
+      .map(
+        (lead) => `
+          <div class="recent-item">
+            <div>
+              <strong>
+                ${escapeHtml(
+                  lead.nome ||
+                    "Sem nome"
+                )}
+              </strong>
 
-                <small>
-                  ${escapeHtml(lead.cidade || "-")} ·
-                  ${escapeHtml(
-                    lead.produto_interesse || "Sem produto"
-                  )}
-                </small>
-              </div>
-
-              <small>${fmtDate(lead.created_at)}</small>
+              <small>
+                ${escapeHtml(
+                  lead.cidade || "-"
+                )}
+                ·
+                ${escapeHtml(
+                  lead.produto_interesse ||
+                    "Sem produto"
+                )}
+              </small>
             </div>
-          `
-        )
-        .join("") ||
-      '<div class="empty">Nenhum lead ainda.</div>';
-  }
+
+            <small>
+              ${fmtDate(
+                lead.created_at
+              )}
+            </small>
+          </div>
+        `
+      )
+      .join("") ||
+    '<div class="empty">Nenhum lead ainda.</div>';
 
   const counts = {};
 
   allLeads.forEach((lead) => {
-    const key =
-      lead.produto_interesse || "Não informado";
+    const product =
+      lead.produto_interesse ||
+      "Não informado";
 
-    counts[key] = (counts[key] || 0) + 1;
+    counts[product] =
+      (counts[product] || 0) +
+      1;
   });
 
-  if ($("productsRanking")) {
-    $("productsRanking").innerHTML =
-      Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
-        .map(
-          ([name, count]) => `
-            <div class="rank-item">
-              <div>
-                <strong>${escapeHtml(name)}</strong>
-                <small>interesses registrados</small>
-              </div>
+  $("productsRanking").innerHTML =
+    Object.entries(counts)
+      .sort(
+        (a, b) =>
+          b[1] - a[1]
+      )
+      .slice(0, 6)
+      .map(
+        ([product, count]) => `
+          <div class="rank-item">
+            <div>
+              <strong>
+                ${escapeHtml(
+                  product
+                )}
+              </strong>
 
-              <strong>${count}</strong>
+              <small>
+                interesses registrados
+              </small>
             </div>
-          `
-        )
-        .join("") ||
-      '<div class="empty">Sem dados.</div>';
-  }
+
+            <strong>
+              ${count}
+            </strong>
+          </div>
+        `
+      )
+      .join("") ||
+    '<div class="empty">Sem dados.</div>';
 }
 
-function fillProductFilter() {
-  if (!$("productFilter")) return;
+/* =========================
+   FILTROS
+========================= */
 
-  const current = $("productFilter").value;
+function fillProductFilter() {
+  const current =
+    $("productFilter").value;
 
   const products = [
     ...new Set(
       allLeads
-        .map((lead) => lead.produto_interesse)
+        .map(
+          (lead) =>
+            lead.produto_interesse
+        )
         .filter(Boolean)
     )
-  ].sort((a, b) =>
-    String(a).localeCompare(String(b), "pt-BR")
-  );
+  ].sort();
 
   $("productFilter").innerHTML =
     '<option value="">Todos os produtos</option>' +
     products
       .map(
-        (product) =>
-          `<option value="${escapeAttr(product)}">
-            ${escapeHtml(product)}
-          </option>`
+        (product) => `
+          <option
+            value="${escapeAttr(
+              product
+            )}"
+          >
+            ${escapeHtml(
+              product
+            )}
+          </option>
+        `
       )
       .join("");
 
-  $("productFilter").value = current;
+  $("productFilter").value =
+    current;
 }
 
+/* =========================
+   LISTA DE LEADS
+========================= */
+
 function renderLeads() {
-  if (!$("leadsTableBody")) return;
+  const search =
+    $("searchInput")
+      .value
+      .trim()
+      .toLowerCase();
 
-  const search = $("searchInput")
-    ? $("searchInput").value.trim().toLowerCase()
-    : "";
+  const product =
+    $("productFilter").value;
 
-  const product = $("productFilter")
-    ? $("productFilter").value
-    : "";
+  const status =
+    $("statusFilter").value;
 
-  const status = $("statusFilter")
-    ? $("statusFilter").value
-    : "";
+  const filtered =
+    allLeads.filter(
+      (lead) => {
+        const haystack =
+          `
+            ${lead.nome || ""}
+            ${lead.telefone || ""}
+            ${lead.cidade || ""}
+            ${lead.produto_interesse || ""}
+            ${lead.observacao || ""}
+          `.toLowerCase();
 
-  const filtered = allLeads.filter((lead) => {
-    const haystack = `
-      ${lead.nome || ""}
-      ${lead.telefone || ""}
-      ${lead.cidade || ""}
-      ${lead.produto_interesse || ""}
-      ${lead.observacoes || ""}
-    `.toLowerCase();
-
-    return (
-      (!search || haystack.includes(search)) &&
-      (!product ||
-        lead.produto_interesse === product) &&
-      (!status || lead.status === status)
+        return (
+          (
+            !search ||
+            haystack.includes(
+              search
+            )
+          ) &&
+          (
+            !product ||
+            lead.produto_interesse ===
+              product
+          ) &&
+          (
+            !status ||
+            lead.status ===
+              status
+          )
+        );
+      }
     );
-  });
 
-  $("leadsTableBody").innerHTML = filtered
-    .map(
-      (lead) => `
-        <tr>
-          <td>
-            <strong>
-              ${escapeHtml(lead.nome || "Sem nome")}
-            </strong>
-          </td>
+  $("leadsTableBody").innerHTML =
+    filtered
+      .map(
+        (lead) => `
+          <tr>
+            <td>
+              <strong>
+                ${escapeHtml(
+                  lead.nome ||
+                    "Sem nome"
+                )}
+              </strong>
+            </td>
 
-          <td>
-            ${escapeHtml(lead.telefone || "-")}
-          </td>
-
-          <td>
-            ${escapeHtml(lead.cidade || "-")}
-          </td>
-
-          <td>
-            ${escapeHtml(
-              lead.produto_interesse || "-"
-            )}
-          </td>
-
-          <td>
-            <span class="status-pill">
+            <td>
               ${escapeHtml(
-                normalizeStatus(lead.status)
+                lead.telefone || "-"
               )}
-            </span>
-          </td>
+            </td>
 
-          <td>
-            ${fmtDate(lead.created_at)}
-          </td>
+            <td>
+              ${escapeHtml(
+                lead.cidade || "-"
+              )}
+            </td>
 
-          <td>
-            <button
-              class="view-btn"
-              data-id="${lead.id}"
-            >
-              Ver ficha
-            </button>
-          </td>
-        </tr>
-      `
-    )
-    .join("");
+            <td>
+              ${escapeHtml(
+                lead.produto_interesse ||
+                  "-"
+              )}
+            </td>
 
-  if ($("emptyState")) {
-    $("emptyState").classList.toggle(
+            <td>
+              <span
+                class="status-pill"
+              >
+                ${escapeHtml(
+                  normalizeStatus(
+                    lead.status
+                  )
+                )}
+              </span>
+            </td>
+
+            <td>
+              ${fmtDate(
+                lead.created_at
+              )}
+            </td>
+
+            <td>
+              <button
+                class="view-btn"
+                data-id="${lead.id}"
+              >
+                Ver ficha
+              </button>
+            </td>
+          </tr>
+        `
+      )
+      .join("");
+
+  $("emptyState")
+    .classList
+    .toggle(
       "hidden",
       filtered.length > 0
     );
-  }
 
   document
-    .querySelectorAll(".view-btn")
-    .forEach((button) => {
-      button.addEventListener("click", () => {
-        openLead(button.dataset.id);
-      });
-    });
+    .querySelectorAll(
+      ".view-btn"
+    )
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            openLead(
+              button.dataset.id
+            );
+          }
+        );
+      }
+    );
 }
 
 function findLeadById(id) {
   return allLeads.find(
-    (item) => String(item.id) === String(id)
+    (lead) =>
+      String(lead.id) ===
+      String(id)
   );
 }
 
+/* =========================
+   FICHA
+========================= */
+
 function openLead(id) {
-  const lead = findLeadById(id);
+  const lead =
+    findLeadById(id);
 
   if (!lead) return;
 
-  currentLeadId = lead.id;
+  currentLeadId =
+    lead.id;
 
-  if ($("detailName")) {
-    $("detailName").textContent =
-      lead.nome || "Cliente";
-  }
+  $("detailName").textContent =
+    lead.nome || "Cliente";
 
-  if ($("detailPhone")) {
-    $("detailPhone").textContent =
-      lead.telefone || "-";
-  }
+  $("editName").value =
+    lead.nome || "";
 
-  if ($("detailCity")) {
-    $("detailCity").textContent =
-      lead.cidade || "-";
-  }
+  $("editPhone").value =
+    lead.telefone || "";
 
-  if ($("detailProduct")) {
-    $("detailProduct").textContent =
-      lead.produto_interesse || "-";
-  }
+  $("editCity").value =
+    lead.cidade || "";
 
-  if ($("detailStatus")) {
-    $("detailStatus").textContent =
-      normalizeStatus(lead.status);
-  }
+  $("editProduct").value =
+    lead.produto_interesse ||
+    "";
 
-  if ($("detailOrigin")) {
-    $("detailOrigin").textContent =
-      lead.origem || "crediti_ia";
-  }
+  $("editStatus").value =
+    lead.status || "novo";
 
-  if ($("detailDate")) {
-    $("detailDate").textContent =
-      fmtDate(lead.created_at);
-  }
+  $("detailOrigin").textContent =
+    lead.origem || "crediti_ia";
 
-  if ($("editName")) {
-    $("editName").value =
-      lead.nome || "";
-  }
+  $("detailDate").textContent =
+    fmtDate(lead.created_at);
 
-  if ($("editPhone")) {
-    $("editPhone").value =
-      lead.telefone || "";
-  }
+  $("leadNotes").value =
+    lead.observacao || "";
 
-  if ($("editCity")) {
-    $("editCity").value =
-      lead.cidade || "";
-  }
+  configureWhatsApp(
+    lead.telefone
+  );
 
-  if ($("editProduct")) {
-    $("editProduct").value =
-      lead.produto_interesse || "";
-  }
-
-  if ($("editStatus")) {
-    $("editStatus").value =
-      lead.status || "novo";
-  }
-
-  if ($("leadNotes")) {
-    $("leadNotes").value =
-      lead.observacoes || "";
-  }
-
-  configureWhatsApp(lead.telefone);
-
-  if ($("leadDialog")) {
-    $("leadDialog").showModal();
-  }
+  $("leadDialog").showModal();
 }
 
-function normalizeBrazilPhone(phone) {
-  let digits = String(phone || "")
-    .replace(/\D/g, "");
+/* =========================
+   WHATSAPP
+========================= */
+
+function normalizeBrazilPhone(
+  phone
+) {
+  let digits =
+    String(phone || "")
+      .replace(/\D/g, "");
 
   if (!digits) {
     return "";
   }
 
-  /*
-    Se já estiver com 55:
-    5585999999999
-  */
-  if (digits.startsWith("55")) {
+  if (
+    digits.startsWith("55") &&
+    (
+      digits.length === 12 ||
+      digits.length === 13
+    )
+  ) {
     return digits;
   }
 
-  /*
-    Número brasileiro com DDD:
-    85999999999
-  */
   if (
     digits.length === 10 ||
     digits.length === 11
@@ -399,27 +592,30 @@ function normalizeBrazilPhone(phone) {
     return `55${digits}`;
   }
 
-  /*
-    Se vier algum formato inesperado,
-    não acrescentamos números aleatórios.
-  */
-  return digits;
+  return "";
 }
 
-function configureWhatsApp(phone) {
-  const link = $("whatsappLink");
+function configureWhatsApp(
+  phone
+) {
+  const button =
+    $("whatsappLink");
 
-  if (!link) return;
+  const number =
+    normalizeBrazilPhone(
+      phone
+    );
 
-  const digits = normalizeBrazilPhone(phone);
+  if (!number) {
+    button.href = "#";
 
-  if (!digits) {
-    link.href = "#";
-    link.onclick = (event) => {
+    button.onclick = (
+      event
+    ) => {
       event.preventDefault();
 
       alert(
-        "Este cliente não possui telefone cadastrado."
+        "Telefone inválido."
       );
     };
 
@@ -429,451 +625,481 @@ function configureWhatsApp(phone) {
   const message =
     "Olá! Aqui é da Crediti. Estou entrando em contato sobre seu atendimento.";
 
-  link.href =
-    `https://wa.me/${digits}` +
-    `?text=${encodeURIComponent(message)}`;
+  button.href =
+    `https://api.whatsapp.com/send?phone=${number}&text=${encodeURIComponent(
+      message
+    )}`;
 
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
+  button.target =
+    "_blank";
 
-  link.onclick = null;
+  button.rel =
+    "noopener noreferrer";
+
+  button.onclick = null;
 }
 
-async function updateLead(id, data) {
-  const res = await fetch(
-    `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(id)}`,
+/* =========================
+   ATUALIZAR LEAD
+========================= */
+
+async function updateLead(
+  id,
+  data
+) {
+  const response = await fetch(
+    `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(
+      id
+    )}`,
     {
       method: "PATCH",
 
-      headers: getSupabaseHeaders({
-        Prefer: "return=representation"
+      headers: authHeaders({
+        "Content-Type":
+          "application/json",
+
+        Prefer:
+          "return=representation"
       }),
 
-      body: JSON.stringify(data)
+      body:
+        JSON.stringify(data)
     }
   );
 
-  if (!res.ok) {
-    throw new Error(await res.text());
+  if (
+    response.status === 401 ||
+    response.status === 403
+  ) {
+    logout();
+    throw new Error(
+      "Sessão expirada."
+    );
   }
 
-  return await res.json();
-}
-
-async function deleteLead(id) {
-  const res = await fetch(
-    `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(id)}`,
-    {
-      method: "DELETE",
-
-      headers: getSupabaseHeaders({
-        Prefer: "return=representation"
-      })
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error(await res.text());
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
+    );
   }
 
-  return await res.json();
+  return await response.json();
 }
 
 async function saveCurrentLead() {
-  if (currentLeadId === null) return;
-
-  const lead = findLeadById(currentLeadId);
-
-  if (!lead) {
-    alert("Lead não encontrado.");
-    return;
-  }
-
-  const data = {};
-
-  if ($("editName")) {
-    data.nome =
-      $("editName").value.trim();
-  }
-
-  if ($("editPhone")) {
-    data.telefone =
-      $("editPhone").value.trim();
-  }
-
-  if ($("editCity")) {
-    data.cidade =
-      $("editCity").value.trim();
-  }
-
-  if ($("editProduct")) {
-    data.produto_interesse =
-      $("editProduct").value.trim();
-  }
-
-  if ($("editStatus")) {
-    data.status =
-      $("editStatus").value;
-  }
-
-  if ($("leadNotes")) {
-    data.observacoes =
-      $("leadNotes").value.trim();
-  }
-
   if (
-    Object.prototype.hasOwnProperty.call(
-      data,
-      "nome"
-    ) &&
-    !data.nome
+    currentLeadId === null
   ) {
-    alert("O nome do cliente não pode ficar vazio.");
     return;
   }
 
-  const button = $("saveLeadBtn");
+  const data = {
+    nome:
+      $("editName")
+        .value
+        .trim(),
 
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Salvando...";
+    telefone:
+      $("editPhone")
+        .value
+        .trim(),
+
+    cidade:
+      $("editCity")
+        .value
+        .trim(),
+
+    produto_interesse:
+      $("editProduct")
+        .value
+        .trim(),
+
+    status:
+      $("editStatus").value,
+
+    observacao:
+      $("leadNotes")
+        .value
+        .trim()
+  };
+
+  if (!data.nome) {
+    alert(
+      "O nome do cliente não pode ficar vazio."
+    );
+
+    return;
   }
+
+  $("saveLeadBtn").disabled =
+    true;
+
+  $("saveLeadBtn").textContent =
+    "Salvando...";
 
   try {
-    await updateLead(currentLeadId, data);
+    await updateLead(
+      currentLeadId,
+      data
+    );
 
     await loadLeads();
 
-    const updatedLead =
-      findLeadById(currentLeadId);
+    openLead(
+      currentLeadId
+    );
 
-    if (updatedLead) {
-      openLead(updatedLead.id);
-    }
-
-    alert("Ficha atualizada com sucesso.");
+    showDialogMessage(
+      "Alterações salvas."
+    );
   } catch (error) {
     console.error(error);
 
-    alert(
-      "Não foi possível salvar as alterações."
+    showDialogMessage(
+      "Não foi possível salvar."
     );
   } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Salvar alterações";
-    }
+    $("saveLeadBtn").disabled =
+      false;
+
+    $("saveLeadBtn").textContent =
+      "Salvar alterações";
   }
 }
 
+/* =========================
+   OBSERVAÇÃO
+========================= */
+
 async function saveNotesOnly() {
-  if (currentLeadId === null) return;
-
-  if (!$("leadNotes")) return;
-
-  const notes =
-    $("leadNotes").value.trim();
-
-  const button = $("saveNotesBtn");
-
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Salvando...";
+  if (
+    currentLeadId === null
+  ) {
+    return;
   }
 
+  const observation =
+    $("leadNotes")
+      .value
+      .trim();
+
+  $("saveNotesBtn").disabled =
+    true;
+
+  $("saveNotesBtn").textContent =
+    "Salvando...";
+
   try {
-    await updateLead(currentLeadId, {
-      observacoes: notes
-    });
+    await updateLead(
+      currentLeadId,
+      {
+        observacao:
+          observation
+      }
+    );
 
     const lead =
-      findLeadById(currentLeadId);
+      findLeadById(
+        currentLeadId
+      );
 
     if (lead) {
-      lead.observacoes = notes;
+      lead.observacao =
+        observation;
     }
 
-    alert("Observação salva.");
+    showDialogMessage(
+      "Observação salva."
+    );
   } catch (error) {
     console.error(error);
 
-    alert(
+    showDialogMessage(
       "Não foi possível salvar a observação."
     );
   } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Salvar observação";
-    }
+    $("saveNotesBtn").disabled =
+      false;
+
+    $("saveNotesBtn").textContent =
+      "Salvar observação";
   }
 }
 
-async function changeCurrentStatus() {
-  if (currentLeadId === null) return;
+/* =========================
+   APAGAR
+========================= */
 
-  if (!$("editStatus")) return;
+async function deleteLead(id) {
+  const response = await fetch(
+    `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(
+      id
+    )}`,
+    {
+      method: "DELETE",
 
-  const status =
-    $("editStatus").value;
-
-  try {
-    await updateLead(currentLeadId, {
-      status
-    });
-
-    await loadLeads();
-
-    const lead =
-      findLeadById(currentLeadId);
-
-    if (lead) {
-      openLead(lead.id);
+      headers: authHeaders()
     }
-  } catch (error) {
-    console.error(error);
+  );
 
-    alert(
-      "Não foi possível alterar o status."
+  if (
+    response.status === 401 ||
+    response.status === 403
+  ) {
+    logout();
+
+    throw new Error(
+      "Sessão expirada."
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
     );
   }
 }
 
 async function removeCurrentLead() {
-  if (currentLeadId === null) return;
-
   const lead =
-    findLeadById(currentLeadId);
+    findLeadById(
+      currentLeadId
+    );
 
   if (!lead) return;
 
-  const name =
-    lead.nome || "este cliente";
-
-  const confirmed = window.confirm(
-    `Tem certeza que deseja apagar o lead de ${name}?\n\nEssa ação não poderá ser desfeita.`
-  );
+  const confirmed =
+    window.confirm(
+      `Apagar definitivamente o lead de ${lead.nome || "este cliente"}?`
+    );
 
   if (!confirmed) return;
 
-  const secondConfirmation =
-    window.confirm(
-      `Confirme novamente: apagar definitivamente ${name}?`
+  try {
+    await deleteLead(
+      currentLeadId
     );
 
-  if (!secondConfirmation) return;
-
-  const button = $("deleteLeadBtn");
-
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Apagando...";
-  }
-
-  try {
-    await deleteLead(currentLeadId);
+    $("leadDialog").close();
 
     currentLeadId = null;
 
-    if ($("leadDialog")) {
-      $("leadDialog").close();
-    }
-
     await loadLeads();
-
-    alert("Lead apagado.");
   } catch (error) {
     console.error(error);
 
     alert(
       "Não foi possível apagar o lead."
     );
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Apagar lead";
-    }
   }
 }
 
-function closeLeadDialog() {
-  currentLeadId = null;
+/* =========================
+   MENSAGEM DA FICHA
+========================= */
 
-  if ($("leadDialog")) {
-    $("leadDialog").close();
-  }
+function showDialogMessage(
+  message
+) {
+  $("dialogMessage").textContent =
+    message;
+
+  clearTimeout(
+    showDialogMessage.timer
+  );
+
+  showDialogMessage.timer =
+    setTimeout(() => {
+      $("dialogMessage").textContent =
+        "";
+    }, 3000);
 }
+
+/* =========================
+   SEGURANÇA HTML
+========================= */
 
 function escapeHtml(value) {
   return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 }
 
 function escapeAttr(value) {
   return escapeHtml(value);
 }
 
-/*
-  NAVEGAÇÃO
-*/
+/* =========================
+   NAVEGAÇÃO
+========================= */
 
 document
-  .querySelectorAll(".nav-item")
-  .forEach((button) => {
-    button.addEventListener("click", () => {
-      document
-        .querySelectorAll(".nav-item")
-        .forEach((item) =>
-          item.classList.remove("active")
-        );
+  .querySelectorAll(
+    ".nav-item"
+  )
+  .forEach(
+    (button) => {
+      button.addEventListener(
+        "click",
+        () => {
+          document
+            .querySelectorAll(
+              ".nav-item"
+            )
+            .forEach(
+              (item) =>
+                item.classList.remove(
+                  "active"
+                )
+            );
 
-      button.classList.add("active");
+          button.classList.add(
+            "active"
+          );
 
-      const view =
-        button.dataset.view;
+          const view =
+            button.dataset.view;
 
-      document
-        .querySelectorAll(".view")
-        .forEach((item) =>
-          item.classList.remove("active")
-        );
+          document
+            .querySelectorAll(
+              ".view"
+            )
+            .forEach(
+              (item) =>
+                item.classList.remove(
+                  "active"
+                )
+            );
 
-      const selectedView =
-        $(`${view}View`);
+          $(`${view}View`)
+            .classList
+            .add("active");
 
-      if (selectedView) {
-        selectedView.classList.add("active");
-      }
+          $("pageTitle")
+            .textContent =
+              view ===
+              "dashboard"
+                ? "Dashboard"
+                : "Clientes / Leads";
+        }
+      );
+    }
+  );
 
-      if ($("pageTitle")) {
-        $("pageTitle").textContent =
-          view === "dashboard"
-            ? "Dashboard"
-            : "Clientes / Leads";
-      }
-    });
-  });
-
-/*
-  FILTROS
-*/
+/* =========================
+   EVENTOS
+========================= */
 
 [
   "searchInput",
   "productFilter",
   "statusFilter"
 ].forEach((id) => {
-  const element = $(id);
-
-  if (!element) return;
-
-  element.addEventListener(
+  $(id).addEventListener(
     id === "searchInput"
       ? "input"
       : "change",
+
     renderLeads
   );
 });
 
-/*
-  BOTÃO ATUALIZAR
-*/
-
-if ($("refreshBtn")) {
-  $("refreshBtn").addEventListener(
+$("refreshBtn")
+  .addEventListener(
     "click",
     () => {
-      loadLeads().catch(showError);
+      loadLeads()
+        .catch(showError);
     }
   );
-}
 
-/*
-  FECHAR FICHA
-*/
-
-if ($("closeDialog")) {
-  $("closeDialog").addEventListener(
+$("closeDialog")
+  .addEventListener(
     "click",
-    closeLeadDialog
+    () => {
+      $("leadDialog").close();
+    }
   );
-}
 
-/*
-  SALVAR FICHA
-*/
-
-if ($("saveLeadBtn")) {
-  $("saveLeadBtn").addEventListener(
+$("saveLeadBtn")
+  .addEventListener(
     "click",
     saveCurrentLead
   );
-}
 
-/*
-  SALVAR SOMENTE OBSERVAÇÃO
-*/
-
-if ($("saveNotesBtn")) {
-  $("saveNotesBtn").addEventListener(
+$("saveNotesBtn")
+  .addEventListener(
     "click",
     saveNotesOnly
   );
-}
 
-/*
-  ALTERAR STATUS
-*/
-
-if ($("editStatus")) {
-  $("editStatus").addEventListener(
-    "change",
-    changeCurrentStatus
-  );
-}
-
-/*
-  APAGAR LEAD
-*/
-
-if ($("deleteLeadBtn")) {
-  $("deleteLeadBtn").addEventListener(
+$("deleteLeadBtn")
+  .addEventListener(
     "click",
     removeCurrentLead
   );
-}
 
-/*
-  FECHAR DIALOG CLICANDO FORA
-*/
-
-if ($("leadDialog")) {
-  $("leadDialog").addEventListener(
+$("loginBtn")
+  .addEventListener(
     "click",
+    loginWithPin
+  );
+
+$("pinInput")
+  .addEventListener(
+    "keydown",
     (event) => {
       if (
-        event.target === $("leadDialog")
+        event.key ===
+        "Enter"
       ) {
-        closeLeadDialog();
+        loginWithPin();
       }
     }
   );
-}
+
+$("logoutBtn")
+  .addEventListener(
+    "click",
+    logout
+  );
 
 function showError(error) {
   console.error(error);
 
-  if ($("recentList")) {
+  if (accessToken) {
     $("recentList").innerHTML =
       '<div class="empty">Não foi possível carregar os leads.</div>';
   }
 }
 
-/*
-  INICIALIZAÇÃO
-*/
+/* =========================
+   INÍCIO
+========================= */
 
-loadLeads().catch(showError);
+if (accessToken) {
+  showApp();
+
+  loadLeads()
+    .catch(showError);
+} else {
+  showLogin();
+}
