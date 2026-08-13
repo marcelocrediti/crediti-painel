@@ -2,16 +2,36 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#ffd400" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <meta
+    name="theme-color"
+    content="#ffd400"
+  />
+
   <title>Crediti IA Painel</title>
 
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link
+    rel="stylesheet"
+    href="styles.css?v=9"
+  />
 </head>
 
 <body>
 
-  <section id="loginScreen" class="login-screen">
+  <!-- =====================================================
+       LOGIN
+  ====================================================== -->
+
+  <section
+    id="loginScreen"
+    class="login-screen"
+  >
+
     <div class="login-card">
 
       <div class="login-brand">
@@ -31,7 +51,10 @@
       </p>
 
       <label class="login-field">
-        <span>E-mail</span>
+
+        <span>
+          E-mail
+        </span>
 
         <input
           id="emailInput"
@@ -39,10 +62,14 @@
           autocomplete="email"
           placeholder="seuemail@exemplo.com"
         />
+
       </label>
 
       <label class="login-field">
-        <span>Senha</span>
+
+        <span>
+          Senha
+        </span>
 
         <input
           id="passwordInput"
@@ -50,6 +77,7 @@
           autocomplete="current-password"
           placeholder="Digite sua senha"
         />
+
       </label>
 
       <button
@@ -79,12 +107,20 @@
       ></div>
 
     </div>
+
   </section>
+
+
+  <!-- =====================================================
+       PAINEL
+  ====================================================== -->
 
   <div
     id="appShell"
     class="app-shell hidden"
   >
+
+    <!-- SIDEBAR -->
 
     <aside class="sidebar">
 
@@ -130,11 +166,17 @@
 
     </aside>
 
+
+    <!-- ===================================================
+         CONTEÚDO
+    ==================================================== -->
+
     <main class="content">
 
       <header class="topbar">
 
         <div>
+
           <p class="eyebrow">
             CREDITI IA
           </p>
@@ -142,6 +184,7 @@
           <h1 id="pageTitle">
             Dashboard
           </h1>
+
         </div>
 
         <button
@@ -154,6 +197,11 @@
 
       </header>
 
+
+      <!-- =================================================
+           DASHBOARD
+      ================================================== -->
+
       <section
         id="dashboardView"
         class="view active"
@@ -162,38 +210,79 @@
         <div class="cards">
 
           <article class="metric-card">
-            <span>Total de leads</span>
-            <strong id="metricTotal">0</strong>
+
+            <span>
+              Total de leads
+            </span>
+
+            <strong id="metricTotal">
+              0
+            </strong>
+
           </article>
 
-          <article class="metric-card">
-            <span>Hoje</span>
-            <strong id="metricToday">0</strong>
-          </article>
 
           <article class="metric-card">
-            <span>Em atendimento</span>
-            <strong id="metricOpen">0</strong>
+
+            <span>
+              Hoje
+            </span>
+
+            <strong id="metricToday">
+              0
+            </strong>
+
           </article>
 
+
           <article class="metric-card">
-            <span>Encaminhados</span>
-            <strong id="metricForwarded">0</strong>
+
+            <span>
+              Em atendimento
+            </span>
+
+            <strong id="metricOpen">
+              0
+            </strong>
+
+          </article>
+
+
+          <article class="metric-card">
+
+            <span>
+              Encaminhados
+            </span>
+
+            <strong id="metricForwarded">
+              0
+            </strong>
+
           </article>
 
         </div>
 
+
         <div class="panel-grid">
+
+          <!-- LEADS RECENTES -->
 
           <section class="panel">
 
             <div class="panel-head">
+
               <div>
-                <h2>Leads recentes</h2>
+
+                <h2>
+                  Leads recentes
+                </h2>
+
                 <p>
                   Últimos atendimentos recebidos pela Crediti IA.
                 </p>
+
               </div>
+
             </div>
 
             <div
@@ -203,15 +292,25 @@
 
           </section>
 
+
+          <!-- PRODUTOS -->
+
           <section class="panel">
 
             <div class="panel-head">
+
               <div>
-                <h2>Produtos mais procurados</h2>
+
+                <h2>
+                  Produtos mais procurados
+                </h2>
+
                 <p>
                   Visão rápida por interesse.
                 </p>
+
               </div>
+
             </div>
 
             <div
@@ -225,12 +324,19 @@
 
       </section>
 
+
+      <!-- =================================================
+           CLIENTES / LEADS
+      ================================================== -->
+
       <section
         id="leadsView"
         class="view"
       >
 
         <section class="panel">
+
+          <!-- FILTROS -->
 
           <div class="filters">
 
@@ -240,11 +346,15 @@
               placeholder="Buscar por nome, telefone ou cidade"
             />
 
+
             <select id="productFilter">
+
               <option value="">
                 Todos os produtos
               </option>
+
             </select>
+
 
             <select id="statusFilter">
 
@@ -290,9 +400,36 @@
 
             </select>
 
+
+            <!-- RESPONSÁVEL -->
+
+            <select id="responsibleFilter">
+
+              <option value="">
+                Todos os responsáveis
+              </option>
+
+              <option value="Marcelino">
+                Marcelino
+              </option>
+
+              <option value="Samila">
+                Samila
+              </option>
+
+              <option value="Não atribuído">
+                Não atribuído
+              </option>
+
+            </select>
+
           </div>
 
-          <!-- DESKTOP -->
+
+          <!-- =================================================
+               DESKTOP
+          ================================================== -->
+
           <div class="desktop-leads">
 
             <div class="table-wrap">
@@ -300,15 +437,41 @@
               <table>
 
                 <thead>
+
                   <tr>
-                    <th>Cliente</th>
-                    <th>Telefone</th>
-                    <th>Cidade</th>
-                    <th>Produto</th>
-                    <th>Status</th>
-                    <th>Data</th>
+
+                    <th>
+                      Cliente
+                    </th>
+
+                    <th>
+                      Telefone
+                    </th>
+
+                    <th>
+                      Cidade
+                    </th>
+
+                    <th>
+                      Produto
+                    </th>
+
+                    <th>
+                      Responsável
+                    </th>
+
+                    <th>
+                      Status
+                    </th>
+
+                    <th>
+                      Data
+                    </th>
+
                     <th></th>
+
                   </tr>
+
                 </thead>
 
                 <tbody id="leadsTableBody"></tbody>
@@ -319,11 +482,16 @@
 
           </div>
 
-          <!-- MOBILE -->
+
+          <!-- =================================================
+               MOBILE
+          ================================================== -->
+
           <div
             id="mobileLeadsList"
             class="mobile-leads-list"
           ></div>
+
 
           <div
             id="emptyState"
@@ -339,6 +507,11 @@
     </main>
 
   </div>
+
+
+  <!-- =====================================================
+       FICHA DO CLIENTE
+  ====================================================== -->
 
   <dialog id="leadDialog">
 
@@ -360,46 +533,107 @@
         Cliente
       </h2>
 
+
       <div class="edit-grid">
 
+        <!-- NOME -->
+
         <label>
-          <span>Nome</span>
+
+          <span>
+            Nome
+          </span>
 
           <input
             id="editName"
             type="text"
           />
+
         </label>
 
+
+        <!-- TELEFONE -->
+
         <label>
-          <span>Telefone</span>
+
+          <span>
+            Telefone
+          </span>
 
           <input
             id="editPhone"
             type="text"
           />
+
         </label>
 
+
+        <!-- CIDADE -->
+
         <label>
-          <span>Cidade</span>
+
+          <span>
+            Cidade
+          </span>
 
           <input
             id="editCity"
             type="text"
           />
+
         </label>
 
+
+        <!-- PRODUTO -->
+
         <label>
-          <span>Produto</span>
+
+          <span>
+            Produto
+          </span>
 
           <input
             id="editProduct"
             type="text"
           />
+
         </label>
 
+
+        <!-- RESPONSÁVEL -->
+
         <label>
-          <span>Status</span>
+
+          <span>
+            Responsável pelo lead
+          </span>
+
+          <select id="editResponsible">
+
+            <option value="">
+              Não atribuído
+            </option>
+
+            <option value="Marcelino">
+              Marcelino
+            </option>
+
+            <option value="Samila">
+              Samila
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <!-- STATUS -->
+
+        <label>
+
+          <span>
+            Status
+          </span>
 
           <select id="editStatus">
 
@@ -440,19 +674,43 @@
             </option>
 
           </select>
+
         </label>
 
+
+        <!-- ORIGEM -->
+
         <div class="read-only-field">
-          <span>Origem</span>
-          <strong id="detailOrigin">-</strong>
+
+          <span>
+            Origem
+          </span>
+
+          <strong id="detailOrigin">
+            -
+          </strong>
+
         </div>
 
+
+        <!-- DATA -->
+
         <div class="read-only-field full">
-          <span>Data</span>
-          <strong id="detailDate">-</strong>
+
+          <span>
+            Data
+          </span>
+
+          <strong id="detailDate">
+            -
+          </strong>
+
         </div>
 
       </div>
+
+
+      <!-- OBSERVAÇÕES -->
 
       <label class="observation-box">
 
@@ -468,10 +726,14 @@
 
       </label>
 
+
       <div
         id="dialogMessage"
         class="dialog-message"
       ></div>
+
+
+      <!-- AÇÕES -->
 
       <div class="dialog-actions">
 
@@ -484,6 +746,7 @@
           Abrir WhatsApp
         </a>
 
+
         <button
           id="saveNotesBtn"
           class="notes-btn"
@@ -492,6 +755,7 @@
           Salvar observação
         </button>
 
+
         <button
           id="saveLeadBtn"
           class="secondary-action-btn"
@@ -499,6 +763,7 @@
         >
           Salvar alterações
         </button>
+
 
         <button
           id="deleteLeadBtn"
@@ -514,7 +779,8 @@
 
   </dialog>
 
-  <script src="app.js?v=8"></script>
+
+  <script src="app.js?v=9"></script>
 
 </body>
 </html>
