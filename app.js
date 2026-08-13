@@ -28,6 +28,7 @@ let recoveryMode = false;
 const $ = (id) =>
   document.getElementById(id);
 
+
 /* =========================================================
    UTILIDADES
 ========================================================= */
@@ -77,14 +78,6 @@ function normalizeStatus(status) {
   return map[status] || status || "Em atendimento";
 }
 
-function normalizeResponsible(value) {
-  if (!value || !String(value).trim()) {
-    return "Não atribuído";
-  }
-
-  return String(value).trim();
-}
-
 function getLeadName(lead) {
   return lead.nome || "Cliente";
 }
@@ -106,9 +99,14 @@ function getLeadStatus(lead) {
 }
 
 function getLeadResponsible(lead) {
-  return normalizeResponsible(
-    lead.responsavel
-  );
+  if (
+    !lead.responsavel ||
+    !String(lead.responsavel).trim()
+  ) {
+    return "Não atribuído";
+  }
+
+  return String(lead.responsavel).trim();
 }
 
 function getLeadDate(lead) {
@@ -125,8 +123,7 @@ function getLeadNotes(lead) {
 
 function formatPhone(value = "") {
   let digits =
-    String(value)
-      .replace(/\D/g, "");
+    String(value).replace(/\D/g, "");
 
   if (
     digits.startsWith("55") &&
@@ -156,12 +153,9 @@ function formatPhone(value = "") {
 
 function whatsappNumber(value = "") {
   let digits =
-    String(value)
-      .replace(/\D/g, "");
+    String(value).replace(/\D/g, "");
 
-  if (!digits) {
-    return "";
-  }
+  if (!digits) return "";
 
   if (
     digits.startsWith("55") &&
@@ -208,6 +202,7 @@ function clearLoginMessages() {
   }
 }
 
+
 /* =========================================================
    TELAS
 ========================================================= */
@@ -232,6 +227,7 @@ function showApp() {
     .remove("hidden");
 }
 
+
 /* =========================================================
    LOGIN
 ========================================================= */
@@ -240,13 +236,10 @@ async function login() {
   clearLoginMessages();
 
   const email =
-    $("emailInput")
-      .value
-      .trim();
+    $("emailInput").value.trim();
 
   const password =
-    $("passwordInput")
-      .value;
+    $("passwordInput").value;
 
   if (!email) {
     $("loginError").textContent =
@@ -264,6 +257,7 @@ async function login() {
   $("loginBtn").textContent = "ENTRANDO...";
 
   try {
+
     const response =
       await fetch(
         `${SUPABASE_AUTH}/token?grant_type=password`,
@@ -333,17 +327,16 @@ async function login() {
   }
 }
 
+
 /* =========================================================
-   ESQUECI MINHA SENHA
+   RECUPERAÇÃO DE SENHA
 ========================================================= */
 
 async function forgotPassword() {
   clearLoginMessages();
 
   const email =
-    $("emailInput")
-      .value
-      .trim();
+    $("emailInput").value.trim();
 
   if (!email) {
     $("loginError").textContent =
@@ -356,6 +349,7 @@ async function forgotPassword() {
     "Enviando...";
 
   try {
+
     const recoveryUrl =
       `${SUPABASE_AUTH}/recover?redirect_to=${encodeURIComponent(
         PANEL_URL
@@ -402,14 +396,9 @@ async function forgotPassword() {
   }
 }
 
-/* =========================================================
-   RECUPERAÇÃO
-========================================================= */
-
 function checkRecoveryLink() {
   const hash =
-    window.location.hash
-      .replace(/^#/, "");
+    window.location.hash.replace(/^#/, "");
 
   if (!hash) {
     return false;
@@ -498,6 +487,7 @@ function prepareRecoveryScreen() {
   }
 
   $("passwordInput").value = "";
+
   $("passwordInput").placeholder =
     "Digite sua nova senha";
 
@@ -534,6 +524,7 @@ async function updateRecoveredPassword() {
     "Salvando...";
 
   try {
+
     const response =
       await fetch(
         `${SUPABASE_AUTH}/user`,
@@ -601,6 +592,7 @@ async function updateRecoveredPassword() {
   }
 }
 
+
 /* =========================================================
    LOGOUT
 ========================================================= */
@@ -625,6 +617,7 @@ function logout() {
     PANEL_URL;
 }
 
+
 /* =========================================================
    CARREGAR LEADS
 ========================================================= */
@@ -636,6 +629,7 @@ async function loadLeads() {
   }
 
   try {
+
     $("refreshBtn").disabled = true;
     $("refreshBtn").textContent =
       "Atualizando...";
@@ -672,9 +666,7 @@ async function loadLeads() {
         : [];
 
     populateProductFilter();
-
     applyFilters();
-
     renderDashboard();
 
   } catch (error) {
@@ -694,8 +686,9 @@ async function loadLeads() {
   }
 }
 
+
 /* =========================================================
-   FILTRO DE PRODUTOS
+   FILTROS
 ========================================================= */
 
 function populateProductFilter() {
@@ -732,10 +725,6 @@ function populateProductFilter() {
   $("productFilter").value =
     current;
 }
-
-/* =========================================================
-   FILTRAR LEADS
-========================================================= */
 
 function applyFilters() {
   const search =
@@ -785,20 +774,23 @@ function applyFilters() {
           getLeadStatus(lead) ===
             status;
 
-        let matchesResponsible =
-          true;
+        let matchesResponsible = true;
 
         if (responsible) {
+
           if (
             responsible ===
             "Não atribuído"
           ) {
+
             matchesResponsible =
               !lead.responsavel ||
               !String(
                 lead.responsavel
               ).trim();
+
           } else {
+
             matchesResponsible =
               getLeadResponsible(
                 lead
@@ -818,8 +810,9 @@ function applyFilters() {
   renderLeads();
 }
 
+
 /* =========================================================
-   RENDERIZAR LEADS
+   RENDER LEADS
 ========================================================= */
 
 function renderLeads() {
@@ -834,8 +827,9 @@ function renderLeads() {
     );
 }
 
+
 /* =========================================================
-   DESKTOP
+   TABELA DESKTOP
 ========================================================= */
 
 function renderDesktopTable() {
@@ -876,9 +870,7 @@ function renderDesktopTable() {
             <td>
               <strong>
                 ${escapeHtml(
-                  getLeadResponsible(
-                    lead
-                  )
+                  getLeadResponsible(lead)
                 )}
               </strong>
             </td>
@@ -902,6 +894,7 @@ function renderDesktopTable() {
             </td>
 
             <td>
+
               <button
                 class="table-view-btn"
                 data-lead-id="${escapeHtml(
@@ -911,6 +904,7 @@ function renderDesktopTable() {
               >
                 Ver ficha
               </button>
+
             </td>
 
           </tr>
@@ -919,8 +913,9 @@ function renderDesktopTable() {
       .join("");
 }
 
+
 /* =========================================================
-   MOBILE
+   CARDS MOBILE
 ========================================================= */
 
 function renderMobileCards() {
@@ -1010,9 +1005,7 @@ function renderMobileCards() {
 
                 <strong>
                   ${escapeHtml(
-                    getLeadResponsible(
-                      lead
-                    )
+                    getLeadResponsible(lead)
                   )}
                 </strong>
 
@@ -1051,6 +1044,7 @@ function renderMobileCards() {
       )
       .join("");
 }
+
 
 /* =========================================================
    DASHBOARD
@@ -1149,9 +1143,7 @@ function renderRecent() {
                 )}
                 ·
                 ${escapeHtml(
-                  getLeadResponsible(
-                    lead
-                  )
+                  getLeadResponsible(lead)
                 )}
               </span>
 
@@ -1208,9 +1200,7 @@ function renderRanking() {
           <div class="ranking-item">
 
             <span>
-              ${escapeHtml(
-                product
-              )}
+              ${escapeHtml(product)}
             </span>
 
             <strong>
@@ -1223,6 +1213,7 @@ function renderRanking() {
       .join("") ||
     '<div class="empty">Nenhum produto registrado.</div>';
 }
+
 
 /* =========================================================
    ABRIR FICHA
@@ -1279,9 +1270,7 @@ function openLead(id) {
   $("leadNotes").value =
     getLeadNotes(lead);
 
-  configureWhatsApp(
-    lead
-  );
+  configureWhatsApp(lead);
 
   $("dialogMessage").textContent =
     "";
@@ -1289,6 +1278,7 @@ function openLead(id) {
   $("leadDialog")
     .showModal();
 }
+
 
 /* =========================================================
    WHATSAPP
@@ -1335,6 +1325,7 @@ function configureWhatsApp(lead) {
   button.onclick = null;
 }
 
+
 /* =========================================================
    ATUALIZAR LEAD
 ========================================================= */
@@ -1361,9 +1352,7 @@ async function updateLead(
           }),
 
         body:
-          JSON.stringify(
-            payload
-          )
+          JSON.stringify(payload)
       }
     );
 
@@ -1392,9 +1381,7 @@ async function saveCurrentLead() {
   }
 
   const nome =
-    $("editName")
-      .value
-      .trim();
+    $("editName").value.trim();
 
   if (!nome) {
     alert(
@@ -1410,6 +1397,7 @@ async function saveCurrentLead() {
     "Salvando...";
 
   try {
+
     await updateLead(
       currentLeadId,
       {
@@ -1445,10 +1433,10 @@ async function saveCurrentLead() {
       }
     );
 
-    await loadLeads();
-
     $("dialogMessage").textContent =
       "Alterações salvas com sucesso.";
+
+    await loadLeads();
 
   } catch (error) {
     console.error(error);
@@ -1465,8 +1453,9 @@ async function saveCurrentLead() {
   }
 }
 
+
 /* =========================================================
-   SALVAR OBSERVAÇÃO
+   OBSERVAÇÃO
 ========================================================= */
 
 async function saveNotes() {
@@ -1483,6 +1472,7 @@ async function saveNotes() {
     "Salvando...";
 
   try {
+
     await updateLead(
       currentLeadId,
       {
@@ -1513,6 +1503,7 @@ async function saveNotes() {
   }
 }
 
+
 /* =========================================================
    APAGAR LEAD
 ========================================================= */
@@ -1540,6 +1531,7 @@ async function deleteCurrentLead() {
     true;
 
   try {
+
     const response =
       await fetch(
         `${SUPABASE_REST}/leads?id=eq.${encodeURIComponent(
@@ -1577,6 +1569,7 @@ async function deleteCurrentLead() {
       false;
   }
 }
+
 
 /* =========================================================
    NAVEGAÇÃO
@@ -1617,6 +1610,7 @@ function changeView(view) {
       ? "Dashboard"
       : "Clientes / Leads";
 }
+
 
 /* =========================================================
    EVENTOS
@@ -1682,6 +1676,7 @@ $("passwordInput")
       if (
         event.key === "Enter"
       ) {
+
         if (recoveryMode) {
           updateRecoveredPassword();
         } else {
@@ -1773,6 +1768,7 @@ $("leadDialog")
     }
   );
 
+
 /* =========================================================
    INICIAR
 ========================================================= */
@@ -1781,12 +1777,15 @@ const openedFromRecovery =
   checkRecoveryLink();
 
 if (openedFromRecovery) {
+
   showLogin();
 
 } else if (accessToken) {
+
   showApp();
   loadLeads();
 
 } else {
+
   showLogin();
 }
