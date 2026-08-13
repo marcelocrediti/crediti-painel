@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffd400" />
+  <title>Crediti IA Painel</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">CREDITI IA</div>
+      <nav>
+        <button class="nav-item active" data-view="dashboard">Dashboard</button>
+        <button class="nav-item" data-view="leads">Clientes / Leads</button>
+      </nav>
+      <div class="sidebar-foot">Painel interno</div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">CREDITI IA</p>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <button id="refreshBtn" class="secondary-btn">Atualizar</button>
+      </header>
+
+      <section id="dashboardView" class="view active">
+        <div class="cards">
+          <article class="metric-card"><span>Total de leads</span><strong id="metricTotal">0</strong></article>
+          <article class="metric-card"><span>Hoje</span><strong id="metricToday">0</strong></article>
+          <article class="metric-card"><span>Em atendimento</span><strong id="metricOpen">0</strong></article>
+          <article class="metric-card"><span>Encaminhados</span><strong id="metricForwarded">0</strong></article>
+        </div>
+
+        <div class="panel-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Leads recentes</h2>
+                <p>Últimos atendimentos recebidos pela Crediti IA.</p>
+              </div>
+            </div>
+            <div id="recentList" class="recent-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Produtos mais procurados</h2>
+                <p>Visão rápida por interesse.</p>
+              </div>
+            </div>
+            <div id="productsRanking" class="ranking"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="leadsView" class="view">
+        <section class="panel">
+          <div class="filters">
+            <input id="searchInput" type="search" placeholder="Buscar por nome, telefone ou cidade" />
+            <select id="productFilter">
+              <option value="">Todos os produtos</option>
+            </select>
+            <select id="statusFilter">
+              <option value="">Todos os status</option>
+              <option value="novo">Novo</option>
+              <option value="dados_coletados">Dados coletados</option>
+              <option value="em_atendimento">Em atendimento</option>
+              <option value="encaminhado">Encaminhado</option>
+            </select>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Telefone</th>
+                  <th>Cidade</th>
+                  <th>Produto</th>
+                  <th>Status</th>
+                  <th>Data</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="leadsTableBody"></tbody>
+            </table>
+          </div>
+
+          <div id="emptyState" class="empty hidden">Nenhum lead encontrado.</div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="leadDialog">
+    <button id="closeDialog" class="dialog-close">×</button>
+    <div class="dialog-content">
+      <p class="eyebrow">FICHA DO CLIENTE</p>
+      <h2 id="detailName">Cliente</h2>
+      <div class="detail-grid">
+        <div><span>Telefone</span><strong id="detailPhone">-</strong></div>
+        <div><span>Cidade</span><strong id="detailCity">-</strong></div>
+        <div><span>Produto</span><strong id="detailProduct">-</strong></div>
+        <div><span>Status</span><strong id="detailStatus">-</strong></div>
+        <div><span>Origem</span><strong id="detailOrigin">-</strong></div>
+        <div><span>Data</span><strong id="detailDate">-</strong></div>
+      </div>
+      <a id="whatsappLink" class="primary-btn" target="_blank" rel="noopener">Abrir WhatsApp</a>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
