@@ -6,16 +6,12 @@
   <meta name="theme-color" content="#ffd400" />
   <title>Crediti IA Painel</title>
 
-  <link
-    rel="stylesheet"
-    href="styles.css?v=5"
-  />
+  <link rel="stylesheet" href="styles.css?v=8" />
 </head>
 
 <body>
 
   <section id="loginScreen" class="login-screen">
-
     <div class="login-card">
 
       <div class="login-brand">
@@ -35,10 +31,7 @@
       </p>
 
       <label class="login-field">
-
-        <span>
-          E-mail
-        </span>
+        <span>E-mail</span>
 
         <input
           id="emailInput"
@@ -46,14 +39,10 @@
           autocomplete="email"
           placeholder="seuemail@exemplo.com"
         />
-
       </label>
 
       <label class="login-field">
-
-        <span>
-          Senha
-        </span>
+        <span>Senha</span>
 
         <input
           id="passwordInput"
@@ -61,7 +50,6 @@
           autocomplete="current-password"
           placeholder="Digite sua senha"
         />
-
       </label>
 
       <button
@@ -91,7 +79,6 @@
       ></div>
 
     </div>
-
   </section>
 
   <div
@@ -148,7 +135,6 @@
       <header class="topbar">
 
         <div>
-
           <p class="eyebrow">
             CREDITI IA
           </p>
@@ -156,7 +142,6 @@
           <h1 id="pageTitle">
             Dashboard
           </h1>
-
         </div>
 
         <button
@@ -177,51 +162,23 @@
         <div class="cards">
 
           <article class="metric-card">
-
-            <span>
-              Total de leads
-            </span>
-
-            <strong id="metricTotal">
-              0
-            </strong>
-
+            <span>Total de leads</span>
+            <strong id="metricTotal">0</strong>
           </article>
 
           <article class="metric-card">
-
-            <span>
-              Hoje
-            </span>
-
-            <strong id="metricToday">
-              0
-            </strong>
-
+            <span>Hoje</span>
+            <strong id="metricToday">0</strong>
           </article>
 
           <article class="metric-card">
-
-            <span>
-              Em atendimento
-            </span>
-
-            <strong id="metricOpen">
-              0
-            </strong>
-
+            <span>Em atendimento</span>
+            <strong id="metricOpen">0</strong>
           </article>
 
           <article class="metric-card">
-
-            <span>
-              Encaminhados
-            </span>
-
-            <strong id="metricForwarded">
-              0
-            </strong>
-
+            <span>Encaminhados</span>
+            <strong id="metricForwarded">0</strong>
           </article>
 
         </div>
@@ -231,19 +188,12 @@
           <section class="panel">
 
             <div class="panel-head">
-
               <div>
-
-                <h2>
-                  Leads recentes
-                </h2>
-
+                <h2>Leads recentes</h2>
                 <p>
                   Últimos atendimentos recebidos pela Crediti IA.
                 </p>
-
               </div>
-
             </div>
 
             <div
@@ -256,19 +206,12 @@
           <section class="panel">
 
             <div class="panel-head">
-
               <div>
-
-                <h2>
-                  Produtos mais procurados
-                </h2>
-
+                <h2>Produtos mais procurados</h2>
                 <p>
                   Visão rápida por interesse.
                 </p>
-
               </div>
-
             </div>
 
             <div
@@ -298,11 +241,9 @@
             />
 
             <select id="productFilter">
-
               <option value="">
                 Todos os produtos
               </option>
-
             </select>
 
             <select id="statusFilter">
@@ -351,29 +292,38 @@
 
           </div>
 
-          <div class="table-wrap">
+          <!-- DESKTOP -->
+          <div class="desktop-leads">
 
-            <table>
+            <div class="table-wrap">
 
-              <thead>
+              <table>
 
-                <tr>
-                  <th>Cliente</th>
-                  <th>Telefone</th>
-                  <th>Cidade</th>
-                  <th>Produto</th>
-                  <th>Status</th>
-                  <th>Data</th>
-                  <th></th>
-                </tr>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Telefone</th>
+                    <th>Cidade</th>
+                    <th>Produto</th>
+                    <th>Status</th>
+                    <th>Data</th>
+                    <th></th>
+                  </tr>
+                </thead>
 
-              </thead>
+                <tbody id="leadsTableBody"></tbody>
 
-              <tbody id="leadsTableBody"></tbody>
+              </table>
 
-            </table>
+            </div>
 
           </div>
+
+          <!-- MOBILE -->
+          <div
+            id="mobileLeadsList"
+            class="mobile-leads-list"
+          ></div>
 
           <div
             id="emptyState"
@@ -413,62 +363,43 @@
       <div class="edit-grid">
 
         <label>
-
-          <span>
-            Nome
-          </span>
+          <span>Nome</span>
 
           <input
             id="editName"
             type="text"
           />
-
         </label>
 
         <label>
-
-          <span>
-            Telefone
-          </span>
+          <span>Telefone</span>
 
           <input
             id="editPhone"
             type="text"
           />
-
         </label>
 
         <label>
-
-          <span>
-            Cidade
-          </span>
+          <span>Cidade</span>
 
           <input
             id="editCity"
             type="text"
           />
-
         </label>
 
         <label>
-
-          <span>
-            Produto
-          </span>
+          <span>Produto</span>
 
           <input
             id="editProduct"
             type="text"
           />
-
         </label>
 
         <label>
-
-          <span>
-            Status
-          </span>
+          <span>Status</span>
 
           <select id="editStatus">
 
@@ -509,31 +440,16 @@
             </option>
 
           </select>
-
         </label>
 
         <div class="read-only-field">
-
-          <span>
-            Origem
-          </span>
-
-          <strong id="detailOrigin">
-            -
-          </strong>
-
+          <span>Origem</span>
+          <strong id="detailOrigin">-</strong>
         </div>
 
         <div class="read-only-field full">
-
-          <span>
-            Data
-          </span>
-
-          <strong id="detailDate">
-            -
-          </strong>
-
+          <span>Data</span>
+          <strong id="detailDate">-</strong>
         </div>
 
       </div>
@@ -598,7 +514,7 @@
 
   </dialog>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=8"></script>
 
 </body>
 </html>
