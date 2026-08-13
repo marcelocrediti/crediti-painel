@@ -5,12 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#ffd400" />
   <title>Crediti IA Painel</title>
-  <link rel="stylesheet" href="styles.css" />
+
+  <link
+    rel="stylesheet"
+    href="styles.css?v=5"
+  />
 </head>
 
 <body>
 
   <section id="loginScreen" class="login-screen">
+
     <div class="login-card">
 
       <div class="login-brand">
@@ -30,7 +35,10 @@
       </p>
 
       <label class="login-field">
-        <span>E-mail</span>
+
+        <span>
+          E-mail
+        </span>
 
         <input
           id="emailInput"
@@ -38,10 +46,14 @@
           autocomplete="email"
           placeholder="seuemail@exemplo.com"
         />
+
       </label>
 
       <label class="login-field">
-        <span>Senha</span>
+
+        <span>
+          Senha
+        </span>
 
         <input
           id="passwordInput"
@@ -49,11 +61,13 @@
           autocomplete="current-password"
           placeholder="Digite sua senha"
         />
+
       </label>
 
       <button
         id="loginBtn"
         class="primary-btn login-btn"
+        type="button"
       >
         ENTRAR
       </button>
@@ -77,6 +91,7 @@
       ></div>
 
     </div>
+
   </section>
 
   <div
@@ -95,6 +110,7 @@
         <button
           class="nav-item active"
           data-view="dashboard"
+          type="button"
         >
           Dashboard
         </button>
@@ -102,6 +118,7 @@
         <button
           class="nav-item"
           data-view="leads"
+          type="button"
         >
           Clientes / Leads
         </button>
@@ -117,6 +134,7 @@
         <button
           id="logoutBtn"
           class="logout-btn"
+          type="button"
         >
           Sair
         </button>
@@ -144,6 +162,7 @@
         <button
           id="refreshBtn"
           class="secondary-btn"
+          type="button"
         >
           Atualizar
         </button>
@@ -376,6 +395,7 @@
     <button
       id="closeDialog"
       class="dialog-close"
+      type="button"
     >
       ×
     </button>
@@ -551,6 +571,7 @@
         <button
           id="saveNotesBtn"
           class="notes-btn"
+          type="button"
         >
           Salvar observação
         </button>
@@ -558,6 +579,7 @@
         <button
           id="saveLeadBtn"
           class="secondary-action-btn"
+          type="button"
         >
           Salvar alterações
         </button>
@@ -565,6 +587,7 @@
         <button
           id="deleteLeadBtn"
           class="danger-btn"
+          type="button"
         >
           Apagar lead
         </button>
@@ -575,7 +598,7 @@
 
   </dialog>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=5"></script>
 
 </body>
 </html>
