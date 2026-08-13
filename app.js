@@ -1,102 +1,49 @@
 /* =========================================================
    CREDITI IA PAINEL
-   app.js
-   ========================================================= */
+   APP.JS COMPLETO
+========================================================= */
 
-const SUPABASE_URL = "https://vgdtywdpywezrwrlsawq.supabase.co";
+const SUPABASE_BASE =
+  "https://vgdtywdpywezrwlrsawq.supabase.co";
 
-/*
-  IMPORTANTE:
-  Mantenha aqui a MESMA chave pública/anônima do Supabase
-  que já estava funcionando no seu app.js anterior.
-*/
-const SUPABASE_KEY = "COLE_AQUI_SUA_CHAVE_SUPABASE";
+const SUPABASE_REST =
+  `${SUPABASE_BASE}/rest/v1`;
 
-/* =========================================================
-   ELEMENTOS
-   ========================================================= */
+const SUPABASE_AUTH =
+  `${SUPABASE_BASE}/auth/v1`;
 
-const loginScreen = document.getElementById("loginScreen");
-const appShell = document.getElementById("appShell");
+const SUPABASE_KEY =
+  "sb_publishable_dmoTPKmglghAohv0MrRA9A_2zlUYhER";
 
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
-const loginBtn = document.getElementById("loginBtn");
-const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
-const loginError = document.getElementById("loginError");
-const loginSuccess = document.getElementById("loginSuccess");
-
-const logoutBtn = document.getElementById("logoutBtn");
-const refreshBtn = document.getElementById("refreshBtn");
-
-const dashboardView = document.getElementById("dashboardView");
-const leadsView = document.getElementById("leadsView");
-const pageTitle = document.getElementById("pageTitle");
-
-const metricTotal = document.getElementById("metricTotal");
-const metricToday = document.getElementById("metricToday");
-const metricOpen = document.getElementById("metricOpen");
-const metricForwarded = document.getElementById("metricForwarded");
-
-const recentList = document.getElementById("recentList");
-const productsRanking = document.getElementById("productsRanking");
-
-const searchInput = document.getElementById("searchInput");
-const productFilter = document.getElementById("productFilter");
-const statusFilter = document.getElementById("statusFilter");
-
-const leadsTableBody = document.getElementById("leadsTableBody");
-const mobileLeadsList = document.getElementById("mobileLeadsList");
-const emptyState = document.getElementById("emptyState");
-
-const leadDialog = document.getElementById("leadDialog");
-const closeDialog = document.getElementById("closeDialog");
-
-const detailName = document.getElementById("detailName");
-const detailOrigin = document.getElementById("detailOrigin");
-const detailDate = document.getElementById("detailDate");
-
-const editName = document.getElementById("editName");
-const editPhone = document.getElementById("editPhone");
-const editCity = document.getElementById("editCity");
-const editProduct = document.getElementById("editProduct");
-const editStatus = document.getElementById("editStatus");
-
-const leadNotes = document.getElementById("leadNotes");
-const dialogMessage = document.getElementById("dialogMessage");
-
-const whatsappLink = document.getElementById("whatsappLink");
-const saveNotesBtn = document.getElementById("saveNotesBtn");
-const saveLeadBtn = document.getElementById("saveLeadBtn");
-const deleteLeadBtn = document.getElementById("deleteLeadBtn");
+const PANEL_URL =
+  "https://marcelocrediti.github.io/crediti-painel/";
 
 /* =========================================================
    ESTADO
-   ========================================================= */
+========================================================= */
 
-let accessToken = localStorage.getItem("crediti_access_token") || "";
-let refreshToken = localStorage.getItem("crediti_refresh_token") || "";
-
-let leads = [];
+let allLeads = [];
 let filteredLeads = [];
-let currentLead = null;
+let currentLeadId = null;
+
+let accessToken =
+  localStorage.getItem("crediti_access_token") || "";
+
+let refreshToken =
+  localStorage.getItem("crediti_refresh_token") || "";
+
+let recoveryMode = false;
 
 /* =========================================================
-   HELPERS
-   ========================================================= */
+   ELEMENTOS
+========================================================= */
 
-function apiHeaders(auth = true) {
-  const headers = {
-    apikey: SUPABASE_KEY,
-    "Content-Type": "application/json"
-  };
+const $ = (id) =>
+  document.getElementById(id);
 
-  if (auth && accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  return headers;
-}
+/* =========================================================
+   UTILIDADES
+========================================================= */
 
 function escapeHtml(value = "") {
   return String(value)
@@ -115,965 +62,1874 @@ function normalizeText(value = "") {
     .trim();
 }
 
-function formatDate(value) {
-  if (!value) return "-";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
+function fmtDate(value) {
+  if (!value) {
+    return "-";
   }
 
-  return date.toLocaleString("pt-BR");
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "-";
+  }
+
+  return date.toLocaleString(
+    "pt-BR"
+  );
 }
 
-function formatPhone(value = "") {
-  const digits = String(value).replace(/\D/g, "");
+function normalizeStatus(status) {
+  const map = {
+    novo:
+      "Novo",
 
-  let number = digits;
+    dados_coletados:
+      "Dados coletados",
 
-  if (number.startsWith("55") && number.length > 11) {
-    number = number.slice(2);
-  }
+    em_atendimento:
+      "Em atendimento",
 
-  if (number.length === 11) {
-    return `(${number.slice(0, 2)}) ${number.slice(2, 7)}-${number.slice(7)}`;
-  }
+    encaminhado:
+      "Encaminhado",
 
-  if (number.length === 10) {
-    return `(${number.slice(0, 2)}) ${number.slice(2, 6)}-${number.slice(6)}`;
-  }
+    documentacao:
+      "Documentação",
 
-  return value || "-";
-}
+    proposta_enviada:
+      "Proposta enviada",
 
-function whatsappNumber(value = "") {
-  let digits = String(value).replace(/\D/g, "");
+    aprovado:
+      "Aprovado",
 
-  if (!digits) return "";
+    nao_aprovado:
+      "Não aprovado",
 
-  if (!digits.startsWith("55")) {
-    digits = `55${digits}`;
-  }
-
-  return digits;
-}
-
-function statusLabel(status = "") {
-  const labels = {
-    novo: "Novo",
-    dados_coletados: "Dados coletados",
-    em_atendimento: "Em atendimento",
-    encaminhado: "Encaminhado",
-    documentacao: "Documentação",
-    proposta_enviada: "Proposta enviada",
-    aprovado: "Aprovado",
-    nao_aprovado: "Não aprovado",
-    finalizado: "Finalizado"
+    finalizado:
+      "Finalizado"
   };
 
-  return labels[status] || status || "Em atendimento";
+  return (
+    map[status] ||
+    status ||
+    "Em atendimento"
+  );
 }
 
 function getLeadName(lead) {
-  return lead.nome || lead.name || lead.cliente || "Cliente";
+  return (
+    lead.nome ||
+    "Cliente"
+  );
 }
 
 function getLeadPhone(lead) {
-  return lead.telefone || lead.phone || lead.whatsapp || "";
+  return (
+    lead.telefone ||
+    ""
+  );
 }
 
 function getLeadCity(lead) {
-  return lead.cidade || lead.city || "-";
+  return (
+    lead.cidade ||
+    "-"
+  );
 }
 
 function getLeadProduct(lead) {
-  return lead.produto || lead.product || lead.interesse || "-";
+  return (
+    lead.produto_interesse ||
+    "-"
+  );
 }
 
 function getLeadStatus(lead) {
-  return lead.status || "em_atendimento";
+  return (
+    lead.status ||
+    "em_atendimento"
+  );
 }
 
 function getLeadDate(lead) {
-  return lead.created_at || lead.data || lead.createdAt || "";
+  return (
+    lead.created_at ||
+    ""
+  );
 }
 
 function getLeadOrigin(lead) {
-  return lead.origem || lead.origin || "Crediti IA";
+  return (
+    lead.origem ||
+    "crediti_ia"
+  );
 }
 
 function getLeadNotes(lead) {
-  return lead.observacoes || lead.notes || "";
+  return (
+    lead.observacao ||
+    ""
+  );
+}
+
+function formatPhone(value = "") {
+  let digits =
+    String(value)
+      .replace(/\D/g, "");
+
+  if (
+    digits.startsWith("55") &&
+    digits.length > 11
+  ) {
+    digits =
+      digits.slice(2);
+  }
+
+  if (
+    digits.length === 11
+  ) {
+    return (
+      `(${digits.slice(0, 2)}) ` +
+      `${digits.slice(2, 7)}-` +
+      `${digits.slice(7)}`
+    );
+  }
+
+  if (
+    digits.length === 10
+  ) {
+    return (
+      `(${digits.slice(0, 2)}) ` +
+      `${digits.slice(2, 6)}-` +
+      `${digits.slice(6)}`
+    );
+  }
+
+  return (
+    value ||
+    "-"
+  );
+}
+
+function whatsappNumber(value = "") {
+  let digits =
+    String(value)
+      .replace(/\D/g, "");
+
+  if (!digits) {
+    return "";
+  }
+
+  if (
+    digits.startsWith("55") &&
+    (
+      digits.length === 12 ||
+      digits.length === 13
+    )
+  ) {
+    return digits;
+  }
+
+  if (
+    digits.length === 10 ||
+    digits.length === 11
+  ) {
+    return `55${digits}`;
+  }
+
+  return "";
+}
+
+function authHeaders(extra = {}) {
+  return {
+    apikey:
+      SUPABASE_KEY,
+
+    Authorization:
+      `Bearer ${accessToken}`,
+
+    ...extra
+  };
+}
+
+function publicHeaders(extra = {}) {
+  return {
+    apikey:
+      SUPABASE_KEY,
+
+    ...extra
+  };
+}
+
+function clearLoginMessages() {
+  if ($("loginError")) {
+    $("loginError").textContent =
+      "";
+  }
+
+  if ($("loginSuccess")) {
+    $("loginSuccess").textContent =
+      "";
+  }
 }
 
 /* =========================================================
-   AUTENTICAÇÃO
-   ========================================================= */
+   TELAS
+========================================================= */
+
+function showLogin() {
+  $("loginScreen")
+    .classList
+    .remove("hidden");
+
+  $("appShell")
+    .classList
+    .add("hidden");
+}
+
+function showApp() {
+  $("loginScreen")
+    .classList
+    .add("hidden");
+
+  $("appShell")
+    .classList
+    .remove("hidden");
+}
+
+/* =========================================================
+   LOGIN
+========================================================= */
 
 async function login() {
-  loginError.textContent = "";
-  loginSuccess.textContent = "";
+  clearLoginMessages();
 
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
+  const email =
+    $("emailInput")
+      .value
+      .trim();
 
-  if (!email || !password) {
-    loginError.textContent = "Informe seu e-mail e sua senha.";
+  const password =
+    $("passwordInput")
+      .value;
+
+  if (!email) {
+    $("loginError").textContent =
+      "Digite seu e-mail.";
+
     return;
   }
 
-  loginBtn.disabled = true;
-  loginBtn.textContent = "ENTRANDO...";
+  if (!password) {
+    $("loginError").textContent =
+      "Digite sua senha.";
+
+    return;
+  }
+
+  $("loginBtn").disabled =
+    true;
+
+  $("loginBtn").textContent =
+    "ENTRANDO...";
 
   try {
-    const response = await fetch(
-      `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-      {
-        method: "POST",
-        headers: apiHeaders(false),
-        body: JSON.stringify({
-          email,
-          password
-        })
-      }
-    );
 
-    const data = await response.json();
+    const response =
+      await fetch(
+        `${SUPABASE_AUTH}/token?grant_type=password`,
+        {
+          method:
+            "POST",
 
-    if (!response.ok) {
-      throw new Error(data.error_description || data.msg || "E-mail ou senha inválidos.");
+          headers:
+            publicHeaders({
+              "Content-Type":
+                "application/json"
+            }),
+
+          body:
+            JSON.stringify({
+              email,
+              password
+            })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.access_token
+    ) {
+      console.error(
+        "Login:",
+        data
+      );
+
+      throw new Error(
+        "E-mail ou senha incorretos."
+      );
     }
 
-    accessToken = data.access_token;
-    refreshToken = data.refresh_token;
+    accessToken =
+      data.access_token;
 
-    localStorage.setItem("crediti_access_token", accessToken);
-    localStorage.setItem("crediti_refresh_token", refreshToken);
+    refreshToken =
+      data.refresh_token ||
+      "";
+
+    localStorage.setItem(
+      "crediti_access_token",
+      accessToken
+    );
+
+    if (refreshToken) {
+      localStorage.setItem(
+        "crediti_refresh_token",
+        refreshToken
+      );
+    }
+
+    $("passwordInput").value =
+      "";
 
     showApp();
 
     await loadLeads();
 
   } catch (error) {
-    loginError.textContent = error.message;
+    console.error(error);
+
+    $("loginError").textContent =
+      error.message ||
+      "Não foi possível entrar.";
+
   } finally {
-    loginBtn.disabled = false;
-    loginBtn.textContent = "ENTRAR";
+    $("loginBtn").disabled =
+      false;
+
+    $("loginBtn").textContent =
+      "ENTRAR";
   }
-}
-
-async function forgotPassword() {
-  loginError.textContent = "";
-  loginSuccess.textContent = "";
-
-  const email = emailInput.value.trim();
-
-  if (!email) {
-    loginError.textContent = "Digite seu e-mail primeiro.";
-    return;
-  }
-
-  forgotPasswordBtn.disabled = true;
-
-  try {
-    const redirectTo =
-      `${window.location.origin}${window.location.pathname}`;
-
-    const response = await fetch(
-      `${SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`,
-      {
-        method: "POST",
-        headers: apiHeaders(false),
-        body: JSON.stringify({
-          email
-        })
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Não foi possível enviar o e-mail agora.");
-    }
-
-    loginSuccess.textContent =
-      "Se este e-mail estiver cadastrado, enviaremos um link para redefinir sua senha.";
-
-  } catch (error) {
-    loginError.textContent = error.message;
-  } finally {
-    forgotPasswordBtn.disabled = false;
-  }
-}
-
-function logout() {
-  accessToken = "";
-  refreshToken = "";
-
-  localStorage.removeItem("crediti_access_token");
-  localStorage.removeItem("crediti_refresh_token");
-
-  appShell.classList.add("hidden");
-  loginScreen.classList.remove("hidden");
-
-  passwordInput.value = "";
-}
-
-function showApp() {
-  loginScreen.classList.add("hidden");
-  appShell.classList.remove("hidden");
 }
 
 /* =========================================================
-   CARREGAR LEADS
-   ========================================================= */
+   ESQUECI MINHA SENHA
+========================================================= */
 
-async function loadLeads() {
+async function forgotPassword() {
+  clearLoginMessages();
+
+  const email =
+    $("emailInput")
+      .value
+      .trim();
+
+  if (!email) {
+    $("loginError").textContent =
+      "Digite seu e-mail primeiro.";
+
+    return;
+  }
+
+  $("forgotPasswordBtn").disabled =
+    true;
+
+  $("forgotPasswordBtn").textContent =
+    "Enviando...";
+
   try {
-    refreshBtn.disabled = true;
-    refreshBtn.textContent = "Atualizando...";
 
-    /*
-      Mantém a tabela "leads".
-      Se no seu Supabase ela tiver outro nome,
-      use exatamente o nome que já estava no app.js anterior.
-    */
+    const recoveryUrl =
+      `${SUPABASE_AUTH}/recover?redirect_to=${encodeURIComponent(
+        PANEL_URL
+      )}`;
 
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/leads?select=*&order=created_at.desc`,
-      {
-        headers: apiHeaders()
-      }
+    const response =
+      await fetch(
+        recoveryUrl,
+        {
+          method:
+            "POST",
+
+          headers:
+            publicHeaders({
+              "Content-Type":
+                "application/json"
+            }),
+
+          body:
+            JSON.stringify({
+              email
+            })
+        }
+      );
+
+    if (!response.ok) {
+      const errorText =
+        await response.text();
+
+      console.error(
+        "Recovery:",
+        errorText
+      );
+
+      throw new Error(
+        "Não foi possível enviar o e-mail agora."
+      );
+    }
+
+    $("loginSuccess").textContent =
+      "Se este e-mail estiver cadastrado, enviaremos um link para redefinir sua senha.";
+
+  } catch (error) {
+    console.error(error);
+
+    $("loginError").textContent =
+      error.message;
+
+  } finally {
+    $("forgotPasswordBtn").disabled =
+      false;
+
+    $("forgotPasswordBtn").textContent =
+      "Esqueci minha senha";
+  }
+}
+
+/* =========================================================
+   RECUPERAÇÃO
+========================================================= */
+
+function checkRecoveryLink() {
+  const hash =
+    window.location.hash
+      .replace(/^#/, "");
+
+  if (!hash) {
+    return false;
+  }
+
+  const params =
+    new URLSearchParams(
+      hash
     );
 
-    if (response.status === 401) {
+  const token =
+    params.get(
+      "access_token"
+    );
+
+  const newRefreshToken =
+    params.get(
+      "refresh_token"
+    );
+
+  const type =
+    params.get(
+      "type"
+    );
+
+  if (
+    !token ||
+    type !== "recovery"
+  ) {
+    return false;
+  }
+
+  recoveryMode =
+    true;
+
+  accessToken =
+    token;
+
+  refreshToken =
+    newRefreshToken ||
+    "";
+
+  prepareRecoveryScreen();
+
+  return true;
+}
+
+function prepareRecoveryScreen() {
+  showLogin();
+
+  clearLoginMessages();
+
+  const emailField =
+    $("emailInput")
+      .closest(
+        ".login-field"
+      );
+
+  if (emailField) {
+    emailField
+      .classList
+      .add("hidden");
+  }
+
+  $("forgotPasswordBtn")
+    .classList
+    .add("hidden");
+
+  const title =
+    document.querySelector(
+      ".login-card h1"
+    );
+
+  if (title) {
+    title.textContent =
+      "Criar nova senha";
+  }
+
+  const subtitle =
+    document.querySelector(
+      ".login-subtitle"
+    );
+
+  if (subtitle) {
+    subtitle.textContent =
+      "Digite abaixo a nova senha que deseja usar no painel.";
+  }
+
+  const passwordField =
+    $("passwordInput")
+      .closest(
+        ".login-field"
+      );
+
+  if (passwordField) {
+    const label =
+      passwordField
+        .querySelector(
+          "span"
+        );
+
+    if (label) {
+      label.textContent =
+        "Nova senha";
+    }
+  }
+
+  $("passwordInput").value =
+    "";
+
+  $("passwordInput").placeholder =
+    "Digite sua nova senha";
+
+  $("passwordInput")
+    .setAttribute(
+      "autocomplete",
+      "new-password"
+    );
+
+  $("loginBtn").textContent =
+    "SALVAR NOVA SENHA";
+
+  $("loginSuccess").textContent =
+    "Link confirmado. Agora crie sua nova senha.";
+}
+
+async function updateRecoveredPassword() {
+  clearLoginMessages();
+
+  const password =
+    $("passwordInput")
+      .value;
+
+  if (
+    !password ||
+    password.length < 6
+  ) {
+    $("loginError").textContent =
+      "A senha precisa ter pelo menos 6 caracteres.";
+
+    return;
+  }
+
+  $("loginBtn").disabled =
+    true;
+
+  $("loginBtn").textContent =
+    "Salvando...";
+
+  try {
+
+    const response =
+      await fetch(
+        `${SUPABASE_AUTH}/user`,
+        {
+          method:
+            "PUT",
+
+          headers:
+            authHeaders({
+              "Content-Type":
+                "application/json"
+            }),
+
+          body:
+            JSON.stringify({
+              password
+            })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      console.error(
+        "Nova senha:",
+        data
+      );
+
+      throw new Error(
+        "Não foi possível alterar sua senha."
+      );
+    }
+
+    recoveryMode =
+      false;
+
+    accessToken =
+      "";
+
+    refreshToken =
+      "";
+
+    localStorage.removeItem(
+      "crediti_access_token"
+    );
+
+    localStorage.removeItem(
+      "crediti_refresh_token"
+    );
+
+    $("loginSuccess").textContent =
+      "Senha alterada com sucesso.";
+
+    window.history.replaceState(
+      {},
+      document.title,
+      PANEL_URL
+    );
+
+    setTimeout(
+      () => {
+        window.location.href =
+          PANEL_URL;
+      },
+      1500
+    );
+
+  } catch (error) {
+    console.error(error);
+
+    $("loginError").textContent =
+      error.message;
+
+  } finally {
+    $("loginBtn").disabled =
+      false;
+
+    if (recoveryMode) {
+      $("loginBtn").textContent =
+        "SALVAR NOVA SENHA";
+    }
+  }
+}
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+function logout() {
+  accessToken =
+    "";
+
+  refreshToken =
+    "";
+
+  localStorage.removeItem(
+    "crediti_access_token"
+  );
+
+  localStorage.removeItem(
+    "crediti_refresh_token"
+  );
+
+  allLeads =
+    [];
+
+  filteredLeads =
+    [];
+
+  currentLeadId =
+    null;
+
+  window.location.href =
+    PANEL_URL;
+}
+
+/* =========================================================
+   LEADS
+========================================================= */
+
+async function loadLeads() {
+  if (!accessToken) {
+    showLogin();
+
+    return;
+  }
+
+  try {
+
+    if ($("refreshBtn")) {
+      $("refreshBtn").disabled =
+        true;
+
+      $("refreshBtn").textContent =
+        "Atualizando...";
+    }
+
+    const response =
+      await fetch(
+        `${SUPABASE_REST}/leads?select=*&order=created_at.desc`,
+        {
+          headers:
+            authHeaders()
+        }
+      );
+
+    if (
+      response.status === 401 ||
+      response.status === 403
+    ) {
       logout();
+
       return;
     }
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     if (!response.ok) {
+      console.error(
+        "Leads:",
+        data
+      );
+
       throw new Error(
-        data.message ||
-        data.error ||
         "Não foi possível carregar os clientes."
       );
     }
 
-    leads = Array.isArray(data) ? data : [];
+    allLeads =
+      Array.isArray(data)
+        ? data
+        : [];
 
     populateProductFilter();
+
     applyFilters();
+
     renderDashboard();
 
   } catch (error) {
     console.error(error);
 
-    leadsTableBody.innerHTML = "";
-    mobileLeadsList.innerHTML = "";
+    if ($("emptyState")) {
+      $("emptyState")
+        .classList
+        .remove("hidden");
 
-    emptyState.classList.remove("hidden");
-    emptyState.textContent = "Não foi possível carregar os clientes.";
+      $("emptyState").textContent =
+        "Não foi possível carregar os clientes.";
+    }
 
   } finally {
-    refreshBtn.disabled = false;
-    refreshBtn.textContent = "Atualizar";
+
+    if ($("refreshBtn")) {
+      $("refreshBtn").disabled =
+        false;
+
+      $("refreshBtn").textContent =
+        "Atualizar";
+    }
   }
 }
 
 /* =========================================================
    FILTROS
-   ========================================================= */
+========================================================= */
 
 function populateProductFilter() {
-  const selected = productFilter.value;
+  const current =
+    $("productFilter").value;
 
   const products = [
     ...new Set(
-      leads
-        .map(getLeadProduct)
-        .filter(product => product && product !== "-")
+      allLeads
+        .map(
+          getLeadProduct
+        )
+        .filter(
+          (product) =>
+            product &&
+            product !== "-"
+        )
     )
-  ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  ].sort(
+    (a, b) =>
+      a.localeCompare(
+        b,
+        "pt-BR"
+      )
+  );
 
-  productFilter.innerHTML =
-    `<option value="">Todos os produtos</option>` +
+  $("productFilter").innerHTML =
+    '<option value="">Todos os produtos</option>' +
     products
-      .map(product => {
-        return `<option value="${escapeHtml(product)}">${escapeHtml(product)}</option>`;
-      })
+      .map(
+        (product) =>
+          `<option value="${escapeHtml(product)}">${escapeHtml(product)}</option>`
+      )
       .join("");
 
-  productFilter.value = selected;
+  $("productFilter").value =
+    current;
 }
 
 function applyFilters() {
-  const search = normalizeText(searchInput.value);
-  const product = normalizeText(productFilter.value);
-  const status = statusFilter.value;
-
-  filteredLeads = leads.filter(lead => {
-    const searchable = normalizeText(
-      [
-        getLeadName(lead),
-        getLeadPhone(lead),
-        getLeadCity(lead),
-        getLeadProduct(lead)
-      ].join(" ")
+  const search =
+    normalizeText(
+      $("searchInput").value
     );
 
-    const matchesSearch =
-      !search || searchable.includes(search);
-
-    const matchesProduct =
-      !product ||
-      normalizeText(getLeadProduct(lead)) === product;
-
-    const matchesStatus =
-      !status ||
-      getLeadStatus(lead) === status;
-
-    return (
-      matchesSearch &&
-      matchesProduct &&
-      matchesStatus
+  const product =
+    normalizeText(
+      $("productFilter").value
     );
-  });
+
+  const status =
+    $("statusFilter").value;
+
+  filteredLeads =
+    allLeads.filter(
+      (lead) => {
+
+        const text =
+          normalizeText(
+            [
+              getLeadName(lead),
+              getLeadPhone(lead),
+              getLeadCity(lead),
+              getLeadProduct(lead),
+              getLeadNotes(lead)
+            ].join(" ")
+          );
+
+        const matchesSearch =
+          !search ||
+          text.includes(
+            search
+          );
+
+        const matchesProduct =
+          !product ||
+          normalizeText(
+            getLeadProduct(lead)
+          ) === product;
+
+        const matchesStatus =
+          !status ||
+          getLeadStatus(lead) ===
+            status;
+
+        return (
+          matchesSearch &&
+          matchesProduct &&
+          matchesStatus
+        );
+      }
+    );
 
   renderLeads();
 }
 
 /* =========================================================
-   DESKTOP + MOBILE
-   ========================================================= */
+   RENDER LEADS
+========================================================= */
 
 function renderLeads() {
   renderDesktopTable();
+
   renderMobileCards();
 
-  if (filteredLeads.length === 0) {
-    emptyState.classList.remove("hidden");
-  } else {
-    emptyState.classList.add("hidden");
-  }
+  $("emptyState")
+    .classList
+    .toggle(
+      "hidden",
+      filteredLeads.length >
+        0
+    );
 }
 
 function renderDesktopTable() {
-  leadsTableBody.innerHTML = filteredLeads
-    .map(lead => {
-      const id = escapeHtml(lead.id);
+  $("leadsTableBody").innerHTML =
+    filteredLeads
+      .map(
+        (lead) => `
+          <tr>
 
-      return `
-        <tr>
+            <td>
+              <strong>
+                ${escapeHtml(
+                  getLeadName(lead)
+                )}
+              </strong>
+            </td>
 
-          <td>
-            <strong>
-              ${escapeHtml(getLeadName(lead))}
-            </strong>
-          </td>
+            <td>
+              ${escapeHtml(
+                formatPhone(
+                  getLeadPhone(lead)
+                )
+              )}
+            </td>
 
-          <td>
-            <a
-              href="https://wa.me/${whatsappNumber(getLeadPhone(lead))}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ${escapeHtml(formatPhone(getLeadPhone(lead)))}
-            </a>
-          </td>
+            <td>
+              ${escapeHtml(
+                getLeadCity(lead)
+              )}
+            </td>
 
-          <td>
-            ${escapeHtml(getLeadCity(lead))}
-          </td>
+            <td>
+              ${escapeHtml(
+                getLeadProduct(lead)
+              )}
+            </td>
 
-          <td>
-            ${escapeHtml(getLeadProduct(lead))}
-          </td>
+            <td>
+              <span class="status-badge">
+                ${escapeHtml(
+                  normalizeStatus(
+                    getLeadStatus(lead)
+                  )
+                )}
+              </span>
+            </td>
 
-          <td>
-            <span class="status-badge">
-              ${escapeHtml(statusLabel(getLeadStatus(lead)))}
-            </span>
-          </td>
+            <td>
+              ${escapeHtml(
+                fmtDate(
+                  getLeadDate(lead)
+                )
+              )}
+            </td>
 
-          <td>
-            ${escapeHtml(formatDate(getLeadDate(lead)))}
-          </td>
+            <td>
+              <button
+                class="table-view-btn"
+                data-lead-id="${escapeHtml(
+                  lead.id
+                )}"
+                type="button"
+              >
+                Ver ficha
+              </button>
+            </td>
 
-          <td>
-            <button
-              class="table-view-btn"
-              type="button"
-              data-lead-id="${id}"
-            >
-              Ver ficha
-            </button>
-          </td>
-
-        </tr>
-      `;
-    })
-    .join("");
+          </tr>
+        `
+      )
+      .join("");
 }
 
 function renderMobileCards() {
-  mobileLeadsList.innerHTML = filteredLeads
-    .map(lead => {
-      const id = escapeHtml(lead.id);
+  $("mobileLeadsList").innerHTML =
+    filteredLeads
+      .map(
+        (lead) => `
+          <article class="mobile-lead-card">
 
-      const name = escapeHtml(getLeadName(lead));
-      const phone = escapeHtml(formatPhone(getLeadPhone(lead)));
-      const city = escapeHtml(getLeadCity(lead));
-      const product = escapeHtml(getLeadProduct(lead));
-      const status = escapeHtml(statusLabel(getLeadStatus(lead)));
-      const date = escapeHtml(formatDate(getLeadDate(lead)));
+            <div class="mobile-lead-top">
 
-      return `
-        <article class="mobile-lead-card">
+              <div class="mobile-lead-main">
 
-          <div class="mobile-lead-top">
+                <span class="mobile-label">
+                  CLIENTE
+                </span>
 
-            <div class="mobile-lead-main">
+                <h3>
+                  ${escapeHtml(
+                    getLeadName(lead)
+                  )}
+                </h3>
 
-              <span class="mobile-label">
-                CLIENTE
+              </div>
+
+              <span class="mobile-status">
+                ${escapeHtml(
+                  normalizeStatus(
+                    getLeadStatus(lead)
+                  )
+                )}
               </span>
-
-              <h3>
-                ${name}
-              </h3>
 
             </div>
 
-            <span class="mobile-status">
-              ${status}
-            </span>
+            <div class="mobile-lead-info">
 
-          </div>
+              <div class="mobile-info-item">
 
-          <div class="mobile-lead-info">
+                <span>
+                  Telefone
+                </span>
 
-            <div class="mobile-info-item">
+                <strong>
+                  ${escapeHtml(
+                    formatPhone(
+                      getLeadPhone(lead)
+                    )
+                  )}
+                </strong>
 
-              <span>
-                Telefone
-              </span>
+              </div>
 
-              <a
-                href="https://wa.me/${whatsappNumber(getLeadPhone(lead))}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                ${phone}
-              </a>
+              <div class="mobile-info-item">
+
+                <span>
+                  Cidade
+                </span>
+
+                <strong>
+                  ${escapeHtml(
+                    getLeadCity(lead)
+                  )}
+                </strong>
+
+              </div>
+
+              <div class="mobile-info-item">
+
+                <span>
+                  Produto
+                </span>
+
+                <strong>
+                  ${escapeHtml(
+                    getLeadProduct(lead)
+                  )}
+                </strong>
+
+              </div>
+
+              <div class="mobile-info-item">
+
+                <span>
+                  Data
+                </span>
+
+                <strong>
+                  ${escapeHtml(
+                    fmtDate(
+                      getLeadDate(lead)
+                    )
+                  )}
+                </strong>
+
+              </div>
 
             </div>
 
-            <div class="mobile-info-item">
+            <button
+              class="mobile-view-btn"
+              type="button"
+              data-lead-id="${escapeHtml(
+                lead.id
+              )}"
+            >
+              Ver ficha
+            </button>
 
-              <span>
-                Cidade
-              </span>
-
-              <strong>
-                ${city}
-              </strong>
-
-            </div>
-
-            <div class="mobile-info-item">
-
-              <span>
-                Produto
-              </span>
-
-              <strong>
-                ${product}
-              </strong>
-
-            </div>
-
-            <div class="mobile-info-item">
-
-              <span>
-                Data
-              </span>
-
-              <strong>
-                ${date}
-              </strong>
-
-            </div>
-
-          </div>
-
-          <button
-            class="mobile-view-btn"
-            type="button"
-            data-lead-id="${id}"
-          >
-            Ver ficha
-          </button>
-
-        </article>
-      `;
-    })
-    .join("");
+          </article>
+        `
+      )
+      .join("");
 }
 
 /* =========================================================
    DASHBOARD
-   ========================================================= */
+========================================================= */
 
 function renderDashboard() {
-  metricTotal.textContent = leads.length;
+  $("metricTotal").textContent =
+    allLeads.length;
 
-  const today = new Date();
+  const today =
+    new Date();
 
-  const todayCount = leads.filter(lead => {
-    const date = new Date(getLeadDate(lead));
+  const todayCount =
+    allLeads.filter(
+      (lead) => {
+        const date =
+          new Date(
+            getLeadDate(lead)
+          );
 
-    if (Number.isNaN(date.getTime())) {
-      return false;
-    }
+        if (
+          Number.isNaN(
+            date.getTime()
+          )
+        ) {
+          return false;
+        }
 
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  }).length;
+        return (
+          date.getDate() ===
+            today.getDate() &&
 
-  metricToday.textContent = todayCount;
+          date.getMonth() ===
+            today.getMonth() &&
 
-  metricOpen.textContent = leads.filter(
-    lead => getLeadStatus(lead) === "em_atendimento"
-  ).length;
+          date.getFullYear() ===
+            today.getFullYear()
+        );
+      }
+    ).length;
 
-  metricForwarded.textContent = leads.filter(
-    lead => getLeadStatus(lead) === "encaminhado"
-  ).length;
+  $("metricToday").textContent =
+    todayCount;
 
-  renderRecentLeads();
-  renderProductRanking();
+  $("metricOpen").textContent =
+    allLeads.filter(
+      (lead) =>
+        [
+          "novo",
+          "dados_coletados",
+          "em_atendimento",
+          "documentacao",
+          "proposta_enviada"
+        ].includes(
+          getLeadStatus(
+            lead
+          )
+        )
+    ).length;
+
+  $("metricForwarded").textContent =
+    allLeads.filter(
+      (lead) =>
+        getLeadStatus(lead) ===
+        "encaminhado"
+    ).length;
+
+  renderRecent();
+
+  renderRanking();
 }
 
-function renderRecentLeads() {
-  const recent = leads.slice(0, 6);
+function renderRecent() {
+  const recent =
+    allLeads.slice(
+      0,
+      6
+    );
 
-  if (!recent.length) {
-    recentList.innerHTML =
-      `<div class="empty">Nenhum lead recebido.</div>`;
-    return;
-  }
+  $("recentList").innerHTML =
+    recent
+      .map(
+        (lead) => `
+          <button
+            class="recent-item"
+            type="button"
+            data-lead-id="${escapeHtml(
+              lead.id
+            )}"
+          >
 
-  recentList.innerHTML = recent
-    .map(lead => {
-      return `
-        <button
-          class="recent-item"
-          type="button"
-          data-lead-id="${escapeHtml(lead.id)}"
-        >
+            <div>
 
-          <div>
-            <strong>
-              ${escapeHtml(getLeadName(lead))}
-            </strong>
+              <strong>
+                ${escapeHtml(
+                  getLeadName(lead)
+                )}
+              </strong>
+
+              <span>
+                ${escapeHtml(
+                  getLeadProduct(lead)
+                )}
+              </span>
+
+            </div>
+
+            <small>
+              ${escapeHtml(
+                fmtDate(
+                  getLeadDate(lead)
+                )
+              )}
+            </small>
+
+          </button>
+        `
+      )
+      .join("") ||
+    '<div class="empty">Nenhum lead recebido.</div>';
+}
+
+function renderRanking() {
+  const counts =
+    {};
+
+  allLeads.forEach(
+    (lead) => {
+
+      const product =
+        getLeadProduct(
+          lead
+        );
+
+      if (
+        !product ||
+        product === "-"
+      ) {
+        return;
+      }
+
+      counts[product] =
+        (
+          counts[product] ||
+          0
+        ) + 1;
+    }
+  );
+
+  $("productsRanking").innerHTML =
+    Object.entries(
+      counts
+    )
+      .sort(
+        (a, b) =>
+          b[1] - a[1]
+      )
+      .slice(
+        0,
+        8
+      )
+      .map(
+        ([product, total]) => `
+          <div class="ranking-item">
 
             <span>
-              ${escapeHtml(getLeadProduct(lead))}
+              ${escapeHtml(
+                product
+              )}
             </span>
+
+            <strong>
+              ${total}
+            </strong>
+
           </div>
-
-          <small>
-            ${escapeHtml(formatDate(getLeadDate(lead)))}
-          </small>
-
-        </button>
-      `;
-    })
-    .join("");
-}
-
-function renderProductRanking() {
-  const counts = {};
-
-  leads.forEach(lead => {
-    const product = getLeadProduct(lead);
-
-    if (!product || product === "-") return;
-
-    counts[product] = (counts[product] || 0) + 1;
-  });
-
-  const ranking = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8);
-
-  if (!ranking.length) {
-    productsRanking.innerHTML =
-      `<div class="empty">Nenhum produto registrado.</div>`;
-    return;
-  }
-
-  productsRanking.innerHTML = ranking
-    .map(([product, total]) => {
-      return `
-        <div class="ranking-item">
-
-          <span>
-            ${escapeHtml(product)}
-          </span>
-
-          <strong>
-            ${total}
-          </strong>
-
-        </div>
-      `;
-    })
-    .join("");
+        `
+      )
+      .join("") ||
+    '<div class="empty">Nenhum produto registrado.</div>';
 }
 
 /* =========================================================
    FICHA
-   ========================================================= */
+========================================================= */
 
 function findLeadById(id) {
-  return leads.find(
-    lead => String(lead.id) === String(id)
+  return allLeads.find(
+    (lead) =>
+      String(lead.id) ===
+      String(id)
   );
 }
 
 function openLead(id) {
-  const lead = findLeadById(id);
+  const lead =
+    findLeadById(id);
 
-  if (!lead) return;
-
-  currentLead = lead;
-
-  detailName.textContent = getLeadName(lead);
-
-  editName.value = getLeadName(lead);
-  editPhone.value = getLeadPhone(lead);
-  editCity.value = getLeadCity(lead);
-  editProduct.value = getLeadProduct(lead);
-  editStatus.value = getLeadStatus(lead);
-
-  detailOrigin.textContent = getLeadOrigin(lead);
-  detailDate.textContent = formatDate(getLeadDate(lead));
-
-  leadNotes.value = getLeadNotes(lead);
-
-  const number = whatsappNumber(getLeadPhone(lead));
-
-  if (number) {
-    const message =
-      `Olá, ${getLeadName(lead)}! Aqui é da Crediti. Recebemos seu atendimento sobre ${getLeadProduct(lead)}.`;
-
-    whatsappLink.href =
-      `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-
-    whatsappLink.style.display = "";
-  } else {
-    whatsappLink.style.display = "none";
+  if (!lead) {
+    return;
   }
 
-  dialogMessage.textContent = "";
+  currentLeadId =
+    lead.id;
 
-  if (typeof leadDialog.showModal === "function") {
-    leadDialog.showModal();
-  } else {
-    leadDialog.setAttribute("open", "");
-  }
-}
+  $("detailName").textContent =
+    getLeadName(lead);
 
-function closeLeadDialog() {
-  currentLead = null;
+  $("editName").value =
+    getLeadName(lead);
 
-  if (typeof leadDialog.close === "function") {
-    leadDialog.close();
-  } else {
-    leadDialog.removeAttribute("open");
-  }
+  $("editPhone").value =
+    getLeadPhone(lead);
+
+  $("editCity").value =
+    getLeadCity(lead);
+
+  $("editProduct").value =
+    getLeadProduct(lead);
+
+  $("editStatus").value =
+    getLeadStatus(lead);
+
+  $("detailOrigin").textContent =
+    getLeadOrigin(lead);
+
+  $("detailDate").textContent =
+    fmtDate(
+      getLeadDate(lead)
+    );
+
+  $("leadNotes").value =
+    getLeadNotes(lead);
+
+  configureWhatsApp(
+    lead
+  );
+
+  $("dialogMessage").textContent =
+    "";
+
+  $("leadDialog")
+    .showModal();
 }
 
 /* =========================================================
-   ATUALIZAR LEAD
-   ========================================================= */
+   WHATSAPP
+========================================================= */
 
-async function updateLead(payload) {
-  if (!currentLead) return false;
+function configureWhatsApp(lead) {
+  const phone =
+    whatsappNumber(
+      getLeadPhone(lead)
+    );
 
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/leads?id=eq.${encodeURIComponent(currentLead.id)}`,
-    {
-      method: "PATCH",
-      headers: {
-        ...apiHeaders(),
-        Prefer: "return=representation"
-      },
-      body: JSON.stringify(payload)
-    }
-  );
+  const button =
+    $("whatsappLink");
 
-  const data = await response.json();
+  if (!phone) {
+    button.href =
+      "#";
+
+    button.onclick =
+      (event) => {
+        event.preventDefault();
+
+        alert(
+          "Telefone inválido."
+        );
+      };
+
+    return;
+  }
+
+  const message =
+    `Olá, ${getLeadName(lead)}! Aqui é da Crediti. Recebemos seu atendimento sobre ${getLeadProduct(lead)}.`;
+
+  button.href =
+    `https://wa.me/${phone}?text=${encodeURIComponent(
+      message
+    )}`;
+
+  button.target =
+    "_blank";
+
+  button.rel =
+    "noopener noreferrer";
+
+  button.onclick =
+    null;
+}
+
+/* =========================================================
+   ATUALIZAR
+========================================================= */
+
+async function updateLead(
+  id,
+  payload
+) {
+  const response =
+    await fetch(
+      `${SUPABASE_REST}/leads?id=eq.${encodeURIComponent(
+        id
+      )}`,
+      {
+        method:
+          "PATCH",
+
+        headers:
+          authHeaders({
+            "Content-Type":
+              "application/json",
+
+            Prefer:
+              "return=representation"
+          }),
+
+        body:
+          JSON.stringify(
+            payload
+          )
+      }
+    );
+
+  const data =
+    await response.json();
 
   if (!response.ok) {
+    console.error(
+      "Update:",
+      data
+    );
+
     throw new Error(
-      data.message ||
-      data.error ||
       "Não foi possível salvar."
     );
   }
 
-  if (Array.isArray(data) && data[0]) {
-    currentLead = data[0];
-  }
-
-  return true;
+  return data;
 }
 
-async function saveLeadChanges() {
-  if (!currentLead) return;
+async function saveCurrentLead() {
+  if (
+    currentLeadId ===
+    null
+  ) {
+    return;
+  }
 
-  saveLeadBtn.disabled = true;
-  dialogMessage.textContent = "Salvando...";
+  const nome =
+    $("editName")
+      .value
+      .trim();
+
+  if (!nome) {
+    alert(
+      "O nome do cliente não pode ficar vazio."
+    );
+
+    return;
+  }
+
+  $("saveLeadBtn").disabled =
+    true;
+
+  $("saveLeadBtn").textContent =
+    "Salvando...";
 
   try {
-    const payload = {
-      nome: editName.value.trim(),
-      telefone: editPhone.value.trim(),
-      cidade: editCity.value.trim(),
-      produto: editProduct.value.trim(),
-      status: editStatus.value
-    };
 
-    await updateLead(payload);
+    await updateLead(
+      currentLeadId,
+      {
+        nome,
 
-    dialogMessage.textContent =
-      "Alterações salvas com sucesso.";
+        telefone:
+          $("editPhone")
+            .value
+            .trim(),
+
+        cidade:
+          $("editCity")
+            .value
+            .trim(),
+
+        produto_interesse:
+          $("editProduct")
+            .value
+            .trim(),
+
+        status:
+          $("editStatus")
+            .value,
+
+        observacao:
+          $("leadNotes")
+            .value
+            .trim()
+      }
+    );
 
     await loadLeads();
+
+    $("dialogMessage").textContent =
+      "Alterações salvas com sucesso.";
 
   } catch (error) {
     console.error(error);
 
-    dialogMessage.textContent =
+    $("dialogMessage").textContent =
       error.message;
 
   } finally {
-    saveLeadBtn.disabled = false;
+    $("saveLeadBtn").disabled =
+      false;
+
+    $("saveLeadBtn").textContent =
+      "Salvar alterações";
   }
 }
 
 async function saveNotes() {
-  if (!currentLead) return;
+  if (
+    currentLeadId ===
+    null
+  ) {
+    return;
+  }
 
-  saveNotesBtn.disabled = true;
-  dialogMessage.textContent = "Salvando observação...";
+  $("saveNotesBtn").disabled =
+    true;
+
+  $("saveNotesBtn").textContent =
+    "Salvando...";
 
   try {
-    await updateLead({
-      observacoes: leadNotes.value.trim()
-    });
 
-    dialogMessage.textContent =
-      "Observação salva com sucesso.";
+    await updateLead(
+      currentLeadId,
+      {
+        observacao:
+          $("leadNotes")
+            .value
+            .trim()
+      }
+    );
+
+    $("dialogMessage").textContent =
+      "Observação salva.";
 
     await loadLeads();
 
   } catch (error) {
     console.error(error);
 
-    dialogMessage.textContent =
+    $("dialogMessage").textContent =
       error.message;
 
   } finally {
-    saveNotesBtn.disabled = false;
+    $("saveNotesBtn").disabled =
+      false;
+
+    $("saveNotesBtn").textContent =
+      "Salvar observação";
   }
 }
 
 /* =========================================================
-   APAGAR LEAD
-   ========================================================= */
+   APAGAR
+========================================================= */
 
-async function deleteLead() {
-  if (!currentLead) return;
-
-  const confirmed = window.confirm(
-    `Deseja realmente apagar o lead de ${getLeadName(currentLead)}?`
-  );
-
-  if (!confirmed) return;
-
-  deleteLeadBtn.disabled = true;
-  dialogMessage.textContent = "Apagando...";
-
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/leads?id=eq.${encodeURIComponent(currentLead.id)}`,
-      {
-        method: "DELETE",
-        headers: apiHeaders()
-      }
+async function deleteCurrentLead() {
+  const lead =
+    findLeadById(
+      currentLeadId
     );
 
-    if (!response.ok) {
-      const data = await response.json();
+  if (!lead) {
+    return;
+  }
 
+  const confirmed =
+    window.confirm(
+      `Deseja realmente apagar o lead de ${getLeadName(lead)}?`
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  $("deleteLeadBtn").disabled =
+    true;
+
+  try {
+
+    const response =
+      await fetch(
+        `${SUPABASE_REST}/leads?id=eq.${encodeURIComponent(
+          currentLeadId
+        )}`,
+        {
+          method:
+            "DELETE",
+
+          headers:
+            authHeaders()
+        }
+      );
+
+    if (!response.ok) {
       throw new Error(
-        data.message ||
-        data.error ||
         "Não foi possível apagar o lead."
       );
     }
 
-    closeLeadDialog();
+    $("leadDialog")
+      .close();
+
+    currentLeadId =
+      null;
 
     await loadLeads();
 
   } catch (error) {
     console.error(error);
 
-    dialogMessage.textContent =
-      error.message;
+    alert(
+      error.message
+    );
 
   } finally {
-    deleteLeadBtn.disabled = false;
+    $("deleteLeadBtn").disabled =
+      false;
   }
 }
 
 /* =========================================================
    NAVEGAÇÃO
-   ========================================================= */
+========================================================= */
 
-function changeView(viewName) {
+function changeView(view) {
   document
-    .querySelectorAll(".nav-item")
-    .forEach(item => {
-      item.classList.toggle(
-        "active",
-        item.dataset.view === viewName
-      );
-    });
+    .querySelectorAll(
+      ".nav-item"
+    )
+    .forEach(
+      (button) => {
 
-  dashboardView.classList.remove("active");
-  leadsView.classList.remove("active");
+        button
+          .classList
+          .toggle(
+            "active",
+            button.dataset.view ===
+              view
+          );
+      }
+    );
 
-  if (viewName === "leads") {
-    leadsView.classList.add("active");
-    pageTitle.textContent = "Clientes / Leads";
-  } else {
-    dashboardView.classList.add("active");
-    pageTitle.textContent = "Dashboard";
-  }
+  document
+    .querySelectorAll(
+      ".view"
+    )
+    .forEach(
+      (item) =>
+        item
+          .classList
+          .remove(
+            "active"
+          )
+    );
+
+  $(`${view}View`)
+    .classList
+    .add(
+      "active"
+    );
+
+  $("pageTitle").textContent =
+    view ===
+    "dashboard"
+      ? "Dashboard"
+      : "Clientes / Leads";
 }
 
 /* =========================================================
-   CLIQUES
-   ========================================================= */
+   EVENTOS
+========================================================= */
 
-document.addEventListener("click", event => {
-  const viewButton = event.target.closest("[data-lead-id]");
+document.addEventListener(
+  "click",
+  (event) => {
 
-  if (viewButton) {
-    const id = viewButton.dataset.leadId;
+    const leadButton =
+      event.target.closest(
+        "[data-lead-id]"
+      );
 
-    if (id) {
-      openLead(id);
+    if (
+      leadButton &&
+      leadButton.dataset.leadId
+    ) {
+      openLead(
+        leadButton.dataset.leadId
+      );
     }
   }
-});
+);
 
 document
-  .querySelectorAll(".nav-item")
-  .forEach(item => {
-    item.addEventListener("click", () => {
-      changeView(item.dataset.view);
-    });
-  });
+  .querySelectorAll(
+    ".nav-item"
+  )
+  .forEach(
+    (button) => {
 
-loginBtn.addEventListener("click", login);
+      button.addEventListener(
+        "click",
+        () => {
 
-passwordInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    login();
-  }
-});
-
-forgotPasswordBtn.addEventListener(
-  "click",
-  forgotPassword
-);
-
-logoutBtn.addEventListener(
-  "click",
-  logout
-);
-
-refreshBtn.addEventListener(
-  "click",
-  loadLeads
-);
-
-searchInput.addEventListener(
-  "input",
-  applyFilters
-);
-
-productFilter.addEventListener(
-  "change",
-  applyFilters
-);
-
-statusFilter.addEventListener(
-  "change",
-  applyFilters
-);
-
-closeDialog.addEventListener(
-  "click",
-  closeLeadDialog
-);
-
-saveLeadBtn.addEventListener(
-  "click",
-  saveLeadChanges
-);
-
-saveNotesBtn.addEventListener(
-  "click",
-  saveNotes
-);
-
-deleteLeadBtn.addEventListener(
-  "click",
-  deleteLead
-);
-
-leadDialog.addEventListener(
-  "click",
-  event => {
-    if (event.target === leadDialog) {
-      closeLeadDialog();
+          changeView(
+            button.dataset.view
+          );
+        }
+      );
     }
-  }
-);
+  );
+
+$("loginBtn")
+  .addEventListener(
+    "click",
+    () => {
+
+      if (
+        recoveryMode
+      ) {
+        updateRecoveredPassword();
+      } else {
+        login();
+      }
+    }
+  );
+
+$("passwordInput")
+  .addEventListener(
+    "keydown",
+    (event) => {
+
+      if (
+        event.key ===
+        "Enter"
+      ) {
+
+        if (
+          recoveryMode
+        ) {
+          updateRecoveredPassword();
+        } else {
+          login();
+        }
+      }
+    }
+  );
+
+$("forgotPasswordBtn")
+  .addEventListener(
+    "click",
+    forgotPassword
+  );
+
+$("logoutBtn")
+  .addEventListener(
+    "click",
+    logout
+  );
+
+$("refreshBtn")
+  .addEventListener(
+    "click",
+    loadLeads
+  );
+
+$("searchInput")
+  .addEventListener(
+    "input",
+    applyFilters
+  );
+
+$("productFilter")
+  .addEventListener(
+    "change",
+    applyFilters
+  );
+
+$("statusFilter")
+  .addEventListener(
+    "change",
+    applyFilters
+  );
+
+$("closeDialog")
+  .addEventListener(
+    "click",
+    () => {
+      $("leadDialog")
+        .close();
+    }
+  );
+
+$("saveLeadBtn")
+  .addEventListener(
+    "click",
+    saveCurrentLead
+  );
+
+$("saveNotesBtn")
+  .addEventListener(
+    "click",
+    saveNotes
+  );
+
+$("deleteLeadBtn")
+  .addEventListener(
+    "click",
+    deleteCurrentLead
+  );
+
+$("leadDialog")
+  .addEventListener(
+    "click",
+    (event) => {
+
+      if (
+        event.target ===
+        $("leadDialog")
+      ) {
+        $("leadDialog")
+          .close();
+      }
+    }
+  );
 
 /* =========================================================
-   INICIALIZAÇÃO
-   ========================================================= */
+   INICIAR
+========================================================= */
 
-async function init() {
-  if (accessToken) {
-    showApp();
-    await loadLeads();
-  } else {
-    loginScreen.classList.remove("hidden");
-    appShell.classList.add("hidden");
-  }
+const openedFromRecovery =
+  checkRecoveryLink();
+
+if (
+  openedFromRecovery
+) {
+
+  showLogin();
+
+} else if (
+  accessToken
+) {
+
+  showApp();
+
+  loadLeads();
+
+} else {
+
+  showLogin();
 }
-
-init();
