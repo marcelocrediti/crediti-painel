@@ -1,8 +1,3 @@
-/* =========================================================
-   CREDITI IA PAINEL
-   APP.JS COMPLETO
-========================================================= */
-
 const SUPABASE_BASE =
   "https://vgdtywdpywezrwlrsawq.supabase.co";
 
@@ -18,10 +13,6 @@ const SUPABASE_KEY =
 const PANEL_URL =
   "https://marcelocrediti.github.io/crediti-painel/";
 
-/* =========================================================
-   ESTADO
-========================================================= */
-
 let allLeads = [];
 let filteredLeads = [];
 let currentLeadId = null;
@@ -33,10 +24,6 @@ let refreshToken =
   localStorage.getItem("crediti_refresh_token") || "";
 
 let recoveryMode = false;
-
-/* =========================================================
-   ELEMENTOS
-========================================================= */
 
 const $ = (id) =>
   document.getElementById(id);
@@ -63,117 +50,77 @@ function normalizeText(value = "") {
 }
 
 function fmtDate(value) {
-  if (!value) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
     return "-";
   }
 
-  const date =
-    new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "-";
-  }
-
-  return date.toLocaleString(
-    "pt-BR"
-  );
+  return date.toLocaleString("pt-BR");
 }
 
 function normalizeStatus(status) {
   const map = {
-    novo:
-      "Novo",
-
-    dados_coletados:
-      "Dados coletados",
-
-    em_atendimento:
-      "Em atendimento",
-
-    encaminhado:
-      "Encaminhado",
-
-    documentacao:
-      "Documentação",
-
-    proposta_enviada:
-      "Proposta enviada",
-
-    aprovado:
-      "Aprovado",
-
-    nao_aprovado:
-      "Não aprovado",
-
-    finalizado:
-      "Finalizado"
+    novo: "Novo",
+    dados_coletados: "Dados coletados",
+    em_atendimento: "Em atendimento",
+    encaminhado: "Encaminhado",
+    documentacao: "Documentação",
+    proposta_enviada: "Proposta enviada",
+    aprovado: "Aprovado",
+    nao_aprovado: "Não aprovado",
+    finalizado: "Finalizado"
   };
 
-  return (
-    map[status] ||
-    status ||
-    "Em atendimento"
-  );
+  return map[status] || status || "Em atendimento";
+}
+
+function normalizeResponsible(value) {
+  if (!value || !String(value).trim()) {
+    return "Não atribuído";
+  }
+
+  return String(value).trim();
 }
 
 function getLeadName(lead) {
-  return (
-    lead.nome ||
-    "Cliente"
-  );
+  return lead.nome || "Cliente";
 }
 
 function getLeadPhone(lead) {
-  return (
-    lead.telefone ||
-    ""
-  );
+  return lead.telefone || "";
 }
 
 function getLeadCity(lead) {
-  return (
-    lead.cidade ||
-    "-"
-  );
+  return lead.cidade || "-";
 }
 
 function getLeadProduct(lead) {
-  return (
-    lead.produto_interesse ||
-    "-"
-  );
+  return lead.produto_interesse || "-";
 }
 
 function getLeadStatus(lead) {
-  return (
-    lead.status ||
-    "em_atendimento"
+  return lead.status || "em_atendimento";
+}
+
+function getLeadResponsible(lead) {
+  return normalizeResponsible(
+    lead.responsavel
   );
 }
 
 function getLeadDate(lead) {
-  return (
-    lead.created_at ||
-    ""
-  );
+  return lead.created_at || "";
 }
 
 function getLeadOrigin(lead) {
-  return (
-    lead.origem ||
-    "crediti_ia"
-  );
+  return lead.origem || "crediti_ia";
 }
 
 function getLeadNotes(lead) {
-  return (
-    lead.observacao ||
-    ""
-  );
+  return lead.observacao || "";
 }
 
 function formatPhone(value = "") {
@@ -185,13 +132,10 @@ function formatPhone(value = "") {
     digits.startsWith("55") &&
     digits.length > 11
   ) {
-    digits =
-      digits.slice(2);
+    digits = digits.slice(2);
   }
 
-  if (
-    digits.length === 11
-  ) {
+  if (digits.length === 11) {
     return (
       `(${digits.slice(0, 2)}) ` +
       `${digits.slice(2, 7)}-` +
@@ -199,9 +143,7 @@ function formatPhone(value = "") {
     );
   }
 
-  if (
-    digits.length === 10
-  ) {
+  if (digits.length === 10) {
     return (
       `(${digits.slice(0, 2)}) ` +
       `${digits.slice(2, 6)}-` +
@@ -209,10 +151,7 @@ function formatPhone(value = "") {
     );
   }
 
-  return (
-    value ||
-    "-"
-  );
+  return value || "-";
 }
 
 function whatsappNumber(value = "") {
@@ -246,34 +185,26 @@ function whatsappNumber(value = "") {
 
 function authHeaders(extra = {}) {
   return {
-    apikey:
-      SUPABASE_KEY,
-
-    Authorization:
-      `Bearer ${accessToken}`,
-
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${accessToken}`,
     ...extra
   };
 }
 
 function publicHeaders(extra = {}) {
   return {
-    apikey:
-      SUPABASE_KEY,
-
+    apikey: SUPABASE_KEY,
     ...extra
   };
 }
 
 function clearLoginMessages() {
   if ($("loginError")) {
-    $("loginError").textContent =
-      "";
+    $("loginError").textContent = "";
   }
 
   if ($("loginSuccess")) {
-    $("loginSuccess").textContent =
-      "";
+    $("loginSuccess").textContent = "";
   }
 }
 
@@ -320,31 +251,24 @@ async function login() {
   if (!email) {
     $("loginError").textContent =
       "Digite seu e-mail.";
-
     return;
   }
 
   if (!password) {
     $("loginError").textContent =
       "Digite sua senha.";
-
     return;
   }
 
-  $("loginBtn").disabled =
-    true;
-
-  $("loginBtn").textContent =
-    "ENTRANDO...";
+  $("loginBtn").disabled = true;
+  $("loginBtn").textContent = "ENTRANDO...";
 
   try {
-
     const response =
       await fetch(
         `${SUPABASE_AUTH}/token?grant_type=password`,
         {
-          method:
-            "POST",
+          method: "POST",
 
           headers:
             publicHeaders({
@@ -367,11 +291,6 @@ async function login() {
       !response.ok ||
       !data.access_token
     ) {
-      console.error(
-        "Login:",
-        data
-      );
-
       throw new Error(
         "E-mail ou senha incorretos."
       );
@@ -381,8 +300,7 @@ async function login() {
       data.access_token;
 
     refreshToken =
-      data.refresh_token ||
-      "";
+      data.refresh_token || "";
 
     localStorage.setItem(
       "crediti_access_token",
@@ -396,8 +314,7 @@ async function login() {
       );
     }
 
-    $("passwordInput").value =
-      "";
+    $("passwordInput").value = "";
 
     showApp();
 
@@ -411,11 +328,8 @@ async function login() {
       "Não foi possível entrar.";
 
   } finally {
-    $("loginBtn").disabled =
-      false;
-
-    $("loginBtn").textContent =
-      "ENTRAR";
+    $("loginBtn").disabled = false;
+    $("loginBtn").textContent = "ENTRAR";
   }
 }
 
@@ -434,18 +348,14 @@ async function forgotPassword() {
   if (!email) {
     $("loginError").textContent =
       "Digite seu e-mail primeiro.";
-
     return;
   }
 
-  $("forgotPasswordBtn").disabled =
-    true;
-
+  $("forgotPasswordBtn").disabled = true;
   $("forgotPasswordBtn").textContent =
     "Enviando...";
 
   try {
-
     const recoveryUrl =
       `${SUPABASE_AUTH}/recover?redirect_to=${encodeURIComponent(
         PANEL_URL
@@ -455,8 +365,7 @@ async function forgotPassword() {
       await fetch(
         recoveryUrl,
         {
-          method:
-            "POST",
+          method: "POST",
 
           headers:
             publicHeaders({
@@ -472,14 +381,6 @@ async function forgotPassword() {
       );
 
     if (!response.ok) {
-      const errorText =
-        await response.text();
-
-      console.error(
-        "Recovery:",
-        errorText
-      );
-
       throw new Error(
         "Não foi possível enviar o e-mail agora."
       );
@@ -495,9 +396,7 @@ async function forgotPassword() {
       error.message;
 
   } finally {
-    $("forgotPasswordBtn").disabled =
-      false;
-
+    $("forgotPasswordBtn").disabled = false;
     $("forgotPasswordBtn").textContent =
       "Esqueci minha senha";
   }
@@ -517,24 +416,16 @@ function checkRecoveryLink() {
   }
 
   const params =
-    new URLSearchParams(
-      hash
-    );
+    new URLSearchParams(hash);
 
   const token =
-    params.get(
-      "access_token"
-    );
+    params.get("access_token");
 
   const newRefreshToken =
-    params.get(
-      "refresh_token"
-    );
+    params.get("refresh_token");
 
   const type =
-    params.get(
-      "type"
-    );
+    params.get("type");
 
   if (
     !token ||
@@ -543,15 +434,10 @@ function checkRecoveryLink() {
     return false;
   }
 
-  recoveryMode =
-    true;
-
-  accessToken =
-    token;
-
+  recoveryMode = true;
+  accessToken = token;
   refreshToken =
-    newRefreshToken ||
-    "";
+    newRefreshToken || "";
 
   prepareRecoveryScreen();
 
@@ -560,14 +446,11 @@ function checkRecoveryLink() {
 
 function prepareRecoveryScreen() {
   showLogin();
-
   clearLoginMessages();
 
   const emailField =
     $("emailInput")
-      .closest(
-        ".login-field"
-      );
+      .closest(".login-field");
 
   if (emailField) {
     emailField
@@ -601,16 +484,12 @@ function prepareRecoveryScreen() {
 
   const passwordField =
     $("passwordInput")
-      .closest(
-        ".login-field"
-      );
+      .closest(".login-field");
 
   if (passwordField) {
     const label =
       passwordField
-        .querySelector(
-          "span"
-        );
+        .querySelector("span");
 
     if (label) {
       label.textContent =
@@ -618,9 +497,7 @@ function prepareRecoveryScreen() {
     }
   }
 
-  $("passwordInput").value =
-    "";
-
+  $("passwordInput").value = "";
   $("passwordInput").placeholder =
     "Digite sua nova senha";
 
@@ -641,8 +518,7 @@ async function updateRecoveredPassword() {
   clearLoginMessages();
 
   const password =
-    $("passwordInput")
-      .value;
+    $("passwordInput").value;
 
   if (
     !password ||
@@ -650,24 +526,19 @@ async function updateRecoveredPassword() {
   ) {
     $("loginError").textContent =
       "A senha precisa ter pelo menos 6 caracteres.";
-
     return;
   }
 
-  $("loginBtn").disabled =
-    true;
-
+  $("loginBtn").disabled = true;
   $("loginBtn").textContent =
     "Salvando...";
 
   try {
-
     const response =
       await fetch(
         `${SUPABASE_AUTH}/user`,
         {
-          method:
-            "PUT",
+          method: "PUT",
 
           headers:
             authHeaders({
@@ -682,28 +553,15 @@ async function updateRecoveredPassword() {
         }
       );
 
-    const data =
-      await response.json();
-
     if (!response.ok) {
-      console.error(
-        "Nova senha:",
-        data
-      );
-
       throw new Error(
         "Não foi possível alterar sua senha."
       );
     }
 
-    recoveryMode =
-      false;
-
-    accessToken =
-      "";
-
-    refreshToken =
-      "";
+    recoveryMode = false;
+    accessToken = "";
+    refreshToken = "";
 
     localStorage.removeItem(
       "crediti_access_token"
@@ -722,13 +580,10 @@ async function updateRecoveredPassword() {
       PANEL_URL
     );
 
-    setTimeout(
-      () => {
-        window.location.href =
-          PANEL_URL;
-      },
-      1500
-    );
+    setTimeout(() => {
+      window.location.href =
+        PANEL_URL;
+    }, 1500);
 
   } catch (error) {
     console.error(error);
@@ -737,8 +592,7 @@ async function updateRecoveredPassword() {
       error.message;
 
   } finally {
-    $("loginBtn").disabled =
-      false;
+    $("loginBtn").disabled = false;
 
     if (recoveryMode) {
       $("loginBtn").textContent =
@@ -752,11 +606,8 @@ async function updateRecoveredPassword() {
 ========================================================= */
 
 function logout() {
-  accessToken =
-    "";
-
-  refreshToken =
-    "";
+  accessToken = "";
+  refreshToken = "";
 
   localStorage.removeItem(
     "crediti_access_token"
@@ -766,39 +617,28 @@ function logout() {
     "crediti_refresh_token"
   );
 
-  allLeads =
-    [];
-
-  filteredLeads =
-    [];
-
-  currentLeadId =
-    null;
+  allLeads = [];
+  filteredLeads = [];
+  currentLeadId = null;
 
   window.location.href =
     PANEL_URL;
 }
 
 /* =========================================================
-   LEADS
+   CARREGAR LEADS
 ========================================================= */
 
 async function loadLeads() {
   if (!accessToken) {
     showLogin();
-
     return;
   }
 
   try {
-
-    if ($("refreshBtn")) {
-      $("refreshBtn").disabled =
-        true;
-
-      $("refreshBtn").textContent =
-        "Atualizando...";
-    }
+    $("refreshBtn").disabled = true;
+    $("refreshBtn").textContent =
+      "Atualizando...";
 
     const response =
       await fetch(
@@ -814,7 +654,6 @@ async function loadLeads() {
       response.status === 403
     ) {
       logout();
-
       return;
     }
 
@@ -822,11 +661,6 @@ async function loadLeads() {
       await response.json();
 
     if (!response.ok) {
-      console.error(
-        "Leads:",
-        data
-      );
-
       throw new Error(
         "Não foi possível carregar os clientes."
       );
@@ -846,29 +680,22 @@ async function loadLeads() {
   } catch (error) {
     console.error(error);
 
-    if ($("emptyState")) {
-      $("emptyState")
-        .classList
-        .remove("hidden");
+    $("emptyState")
+      .classList
+      .remove("hidden");
 
-      $("emptyState").textContent =
-        "Não foi possível carregar os clientes.";
-    }
+    $("emptyState").textContent =
+      "Não foi possível carregar os clientes.";
 
   } finally {
-
-    if ($("refreshBtn")) {
-      $("refreshBtn").disabled =
-        false;
-
-      $("refreshBtn").textContent =
-        "Atualizar";
-    }
+    $("refreshBtn").disabled = false;
+    $("refreshBtn").textContent =
+      "Atualizar";
   }
 }
 
 /* =========================================================
-   FILTROS
+   FILTRO DE PRODUTOS
 ========================================================= */
 
 function populateProductFilter() {
@@ -878,9 +705,7 @@ function populateProductFilter() {
   const products = [
     ...new Set(
       allLeads
-        .map(
-          getLeadProduct
-        )
+        .map(getLeadProduct)
         .filter(
           (product) =>
             product &&
@@ -908,6 +733,10 @@ function populateProductFilter() {
     current;
 }
 
+/* =========================================================
+   FILTRAR LEADS
+========================================================= */
+
 function applyFilters() {
   const search =
     normalizeText(
@@ -922,6 +751,9 @@ function applyFilters() {
   const status =
     $("statusFilter").value;
 
+  const responsible =
+    $("responsibleFilter").value;
+
   filteredLeads =
     allLeads.filter(
       (lead) => {
@@ -933,15 +765,14 @@ function applyFilters() {
               getLeadPhone(lead),
               getLeadCity(lead),
               getLeadProduct(lead),
+              getLeadResponsible(lead),
               getLeadNotes(lead)
             ].join(" ")
           );
 
         const matchesSearch =
           !search ||
-          text.includes(
-            search
-          );
+          text.includes(search);
 
         const matchesProduct =
           !product ||
@@ -954,10 +785,32 @@ function applyFilters() {
           getLeadStatus(lead) ===
             status;
 
+        let matchesResponsible =
+          true;
+
+        if (responsible) {
+          if (
+            responsible ===
+            "Não atribuído"
+          ) {
+            matchesResponsible =
+              !lead.responsavel ||
+              !String(
+                lead.responsavel
+              ).trim();
+          } else {
+            matchesResponsible =
+              getLeadResponsible(
+                lead
+              ) === responsible;
+          }
+        }
+
         return (
           matchesSearch &&
           matchesProduct &&
-          matchesStatus
+          matchesStatus &&
+          matchesResponsible
         );
       }
     );
@@ -966,22 +819,24 @@ function applyFilters() {
 }
 
 /* =========================================================
-   RENDER LEADS
+   RENDERIZAR LEADS
 ========================================================= */
 
 function renderLeads() {
   renderDesktopTable();
-
   renderMobileCards();
 
   $("emptyState")
     .classList
     .toggle(
       "hidden",
-      filteredLeads.length >
-        0
+      filteredLeads.length > 0
     );
 }
+
+/* =========================================================
+   DESKTOP
+========================================================= */
 
 function renderDesktopTable() {
   $("leadsTableBody").innerHTML =
@@ -1019,6 +874,16 @@ function renderDesktopTable() {
             </td>
 
             <td>
+              <strong>
+                ${escapeHtml(
+                  getLeadResponsible(
+                    lead
+                  )
+                )}
+              </strong>
+            </td>
+
+            <td>
               <span class="status-badge">
                 ${escapeHtml(
                   normalizeStatus(
@@ -1053,6 +918,10 @@ function renderDesktopTable() {
       )
       .join("");
 }
+
+/* =========================================================
+   MOBILE
+========================================================= */
 
 function renderMobileCards() {
   $("mobileLeadsList").innerHTML =
@@ -1136,6 +1005,22 @@ function renderMobileCards() {
               <div class="mobile-info-item">
 
                 <span>
+                  Responsável
+                </span>
+
+                <strong>
+                  ${escapeHtml(
+                    getLeadResponsible(
+                      lead
+                    )
+                  )}
+                </strong>
+
+              </div>
+
+              <div class="mobile-info-item">
+
+                <span>
                   Data
                 </span>
 
@@ -1181,6 +1066,7 @@ function renderDashboard() {
   const todayCount =
     allLeads.filter(
       (lead) => {
+
         const date =
           new Date(
             getLeadDate(lead)
@@ -1197,10 +1083,8 @@ function renderDashboard() {
         return (
           date.getDate() ===
             today.getDate() &&
-
           date.getMonth() ===
             today.getMonth() &&
-
           date.getFullYear() ===
             today.getFullYear()
         );
@@ -1220,9 +1104,7 @@ function renderDashboard() {
           "documentacao",
           "proposta_enviada"
         ].includes(
-          getLeadStatus(
-            lead
-          )
+          getLeadStatus(lead)
         )
     ).length;
 
@@ -1234,16 +1116,12 @@ function renderDashboard() {
     ).length;
 
   renderRecent();
-
   renderRanking();
 }
 
 function renderRecent() {
   const recent =
-    allLeads.slice(
-      0,
-      6
-    );
+    allLeads.slice(0, 6);
 
   $("recentList").innerHTML =
     recent
@@ -1269,6 +1147,12 @@ function renderRecent() {
                 ${escapeHtml(
                   getLeadProduct(lead)
                 )}
+                ·
+                ${escapeHtml(
+                  getLeadResponsible(
+                    lead
+                  )
+                )}
               </span>
 
             </div>
@@ -1289,16 +1173,13 @@ function renderRecent() {
 }
 
 function renderRanking() {
-  const counts =
-    {};
+  const counts = {};
 
   allLeads.forEach(
     (lead) => {
 
       const product =
-        getLeadProduct(
-          lead
-        );
+        getLeadProduct(lead);
 
       if (
         !product ||
@@ -1316,17 +1197,12 @@ function renderRanking() {
   );
 
   $("productsRanking").innerHTML =
-    Object.entries(
-      counts
-    )
+    Object.entries(counts)
       .sort(
         (a, b) =>
           b[1] - a[1]
       )
-      .slice(
-        0,
-        8
-      )
+      .slice(0, 8)
       .map(
         ([product, total]) => `
           <div class="ranking-item">
@@ -1349,7 +1225,7 @@ function renderRanking() {
 }
 
 /* =========================================================
-   FICHA
+   ABRIR FICHA
 ========================================================= */
 
 function findLeadById(id) {
@@ -1389,6 +1265,9 @@ function openLead(id) {
   $("editStatus").value =
     getLeadStatus(lead);
 
+  $("editResponsible").value =
+    lead.responsavel || "";
+
   $("detailOrigin").textContent =
     getLeadOrigin(lead);
 
@@ -1425,8 +1304,7 @@ function configureWhatsApp(lead) {
     $("whatsappLink");
 
   if (!phone) {
-    button.href =
-      "#";
+    button.href = "#";
 
     button.onclick =
       (event) => {
@@ -1454,12 +1332,11 @@ function configureWhatsApp(lead) {
   button.rel =
     "noopener noreferrer";
 
-  button.onclick =
-    null;
+  button.onclick = null;
 }
 
 /* =========================================================
-   ATUALIZAR
+   ATUALIZAR LEAD
 ========================================================= */
 
 async function updateLead(
@@ -1472,8 +1349,7 @@ async function updateLead(
         id
       )}`,
       {
-        method:
-          "PATCH",
+        method: "PATCH",
 
         headers:
           authHeaders({
@@ -1510,8 +1386,7 @@ async function updateLead(
 
 async function saveCurrentLead() {
   if (
-    currentLeadId ===
-    null
+    currentLeadId === null
   ) {
     return;
   }
@@ -1525,7 +1400,6 @@ async function saveCurrentLead() {
     alert(
       "O nome do cliente não pode ficar vazio."
     );
-
     return;
   }
 
@@ -1536,7 +1410,6 @@ async function saveCurrentLead() {
     "Salvando...";
 
   try {
-
     await updateLead(
       currentLeadId,
       {
@@ -1556,6 +1429,10 @@ async function saveCurrentLead() {
           $("editProduct")
             .value
             .trim(),
+
+        responsavel:
+          $("editResponsible")
+            .value,
 
         status:
           $("editStatus")
@@ -1588,10 +1465,13 @@ async function saveCurrentLead() {
   }
 }
 
+/* =========================================================
+   SALVAR OBSERVAÇÃO
+========================================================= */
+
 async function saveNotes() {
   if (
-    currentLeadId ===
-    null
+    currentLeadId === null
   ) {
     return;
   }
@@ -1603,7 +1483,6 @@ async function saveNotes() {
     "Salvando...";
 
   try {
-
     await updateLead(
       currentLeadId,
       {
@@ -1635,7 +1514,7 @@ async function saveNotes() {
 }
 
 /* =========================================================
-   APAGAR
+   APAGAR LEAD
 ========================================================= */
 
 async function deleteCurrentLead() {
@@ -1661,15 +1540,13 @@ async function deleteCurrentLead() {
     true;
 
   try {
-
     const response =
       await fetch(
         `${SUPABASE_REST}/leads?id=eq.${encodeURIComponent(
           currentLeadId
         )}`,
         {
-          method:
-            "DELETE",
+          method: "DELETE",
 
           headers:
             authHeaders()
@@ -1682,11 +1559,9 @@ async function deleteCurrentLead() {
       );
     }
 
-    $("leadDialog")
-      .close();
+    $("leadDialog").close();
 
-    currentLeadId =
-      null;
+    currentLeadId = null;
 
     await loadLeads();
 
@@ -1715,13 +1590,10 @@ function changeView(view) {
     .forEach(
       (button) => {
 
-        button
-          .classList
-          .toggle(
-            "active",
-            button.dataset.view ===
-              view
-          );
+        button.classList.toggle(
+          "active",
+          button.dataset.view === view
+        );
       }
     );
 
@@ -1731,22 +1603,17 @@ function changeView(view) {
     )
     .forEach(
       (item) =>
-        item
-          .classList
-          .remove(
-            "active"
-          )
+        item.classList.remove(
+          "active"
+        )
     );
 
   $(`${view}View`)
     .classList
-    .add(
-      "active"
-    );
+    .add("active");
 
   $("pageTitle").textContent =
-    view ===
-    "dashboard"
+    view === "dashboard"
       ? "Dashboard"
       : "Clientes / Leads";
 }
@@ -1799,9 +1666,7 @@ $("loginBtn")
     "click",
     () => {
 
-      if (
-        recoveryMode
-      ) {
+      if (recoveryMode) {
         updateRecoveredPassword();
       } else {
         login();
@@ -1815,13 +1680,9 @@ $("passwordInput")
     (event) => {
 
       if (
-        event.key ===
-        "Enter"
+        event.key === "Enter"
       ) {
-
-        if (
-          recoveryMode
-        ) {
+        if (recoveryMode) {
           updateRecoveredPassword();
         } else {
           login();
@@ -1866,12 +1727,17 @@ $("statusFilter")
     applyFilters
   );
 
+$("responsibleFilter")
+  .addEventListener(
+    "change",
+    applyFilters
+  );
+
 $("closeDialog")
   .addEventListener(
     "click",
     () => {
-      $("leadDialog")
-        .close();
+      $("leadDialog").close();
     }
   );
 
@@ -1902,8 +1768,7 @@ $("leadDialog")
         event.target ===
         $("leadDialog")
       ) {
-        $("leadDialog")
-          .close();
+        $("leadDialog").close();
       }
     }
   );
@@ -1915,21 +1780,13 @@ $("leadDialog")
 const openedFromRecovery =
   checkRecoveryLink();
 
-if (
-  openedFromRecovery
-) {
-
+if (openedFromRecovery) {
   showLogin();
 
-} else if (
-  accessToken
-) {
-
+} else if (accessToken) {
   showApp();
-
   loadLeads();
 
 } else {
-
   showLogin();
 }
