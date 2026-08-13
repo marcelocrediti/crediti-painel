@@ -1,29 +1,34 @@
 :root {
   --yellow: #ffd400;
-  --yellow-2: #ffe24f;
+  --yellow-soft: #fff4b8;
   --black: #0f0f0f;
   --black-2: #171717;
   --white: #ffffff;
-  --bg: #f6f6f4;
-  --soft: #f1f1ed;
+  --bg: #f6f6f3;
+  --soft: #f2f2ee;
   --line: #e4e4de;
-  --muted: #74746e;
+  --muted: #77776f;
+  --green: #238636;
   --danger: #b42318;
   --danger-soft: #fff0ee;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.10);
-  --radius: 20px;
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  --radius: 18px;
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
-  margin: 0;
   font-family: Arial, Helvetica, sans-serif;
   background: var(--bg);
   color: var(--black);
@@ -50,45 +55,27 @@ button {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
+  padding: 22px;
   background:
     radial-gradient(
-      circle at 85% 15%,
-      rgba(255, 212, 0, 0.30),
-      transparent 28%
+      circle at 85% 10%,
+      rgba(255, 212, 0, 0.28),
+      transparent 30%
     ),
     linear-gradient(
       135deg,
-      #0d0d0d 0%,
-      #111111 55%,
+      #0c0c0c 0%,
+      #111111 58%,
       #191600 100%
     );
 }
 
-.login-screen::before {
-  content: "";
-  position: absolute;
-  width: 420px;
-  height: 420px;
-  border-radius: 50%;
-  background: rgba(255, 212, 0, 0.08);
-  filter: blur(40px);
-  left: -150px;
-  bottom: -180px;
-}
-
 .login-card {
-  position: relative;
-  z-index: 1;
-  width: min(430px, 100%);
-  background: rgba(255, 255, 255, 0.98);
+  width: min(440px, 100%);
+  background: var(--white);
   border-radius: 26px;
   padding: 38px;
-  box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.38),
-    0 0 0 1px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
 }
 
 .login-brand {
@@ -99,10 +86,8 @@ button {
   padding: 0 16px;
   border-radius: 13px;
   background: var(--yellow);
-  color: var(--black);
   font-weight: 900;
   font-size: 17px;
-  letter-spacing: -0.4px;
   margin-bottom: 24px;
 }
 
@@ -119,7 +104,7 @@ button {
   margin: 0;
   font-size: 34px;
   line-height: 1.05;
-  letter-spacing: -1.1px;
+  letter-spacing: -1px;
 }
 
 .login-subtitle {
@@ -137,7 +122,6 @@ button {
 .login-field span {
   display: block;
   margin-bottom: 7px;
-  color: #33332f;
   font-size: 12px;
   font-weight: 900;
 }
@@ -148,11 +132,8 @@ button {
   border: 1px solid #d7d7d1;
   border-radius: 13px;
   padding: 0 15px;
-  background: #fff;
-  color: var(--black);
+  background: var(--white);
   outline: none;
-  font-size: 15px;
-  transition: 0.18s ease;
 }
 
 .login-field input:focus {
@@ -163,26 +144,23 @@ button {
 .login-btn {
   width: 100%;
   height: 54px;
-  margin-top: 4px;
   border: 0;
   border-radius: 13px;
   background: var(--yellow);
   color: var(--black);
   font-weight: 900;
-  font-size: 15px;
-  box-shadow: 0 10px 24px rgba(255, 212, 0, 0.22);
+  margin-top: 4px;
 }
 
 .forgot-btn {
   width: 100%;
   margin-top: 10px;
   border: 0;
-  background: #f4f4f0;
-  color: #33332f;
-  font-size: 13px;
-  font-weight: 900;
-  padding: 12px;
   border-radius: 11px;
+  background: var(--soft);
+  color: var(--black);
+  padding: 12px;
+  font-weight: 900;
 }
 
 .login-error,
@@ -200,7 +178,7 @@ button {
 }
 
 .login-success {
-  color: #21833c;
+  color: var(--green);
 }
 
 /* ESTRUTURA */
@@ -245,8 +223,8 @@ button {
   font-weight: 900;
 }
 
-.nav-item:hover,
-.nav-item.active {
+.nav-item.active,
+.nav-item:hover {
   background: var(--yellow);
   color: var(--black);
 }
@@ -271,8 +249,8 @@ button {
 }
 
 .content {
-  min-width: 0;
   width: 100%;
+  min-width: 0;
   padding: 34px;
 }
 
@@ -352,7 +330,6 @@ button {
   display: block;
   font-size: 36px;
   line-height: 1;
-  letter-spacing: -1.4px;
 }
 
 .panel-grid {
@@ -384,27 +361,41 @@ button {
 }
 
 .recent-item,
-.rank-item {
+.ranking-item {
+  width: 100%;
+  border: 1px solid #ecece7;
+  border-radius: 14px;
+  background: #fbfbf9;
+  padding: 15px;
+}
+
+.recent-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 15px;
-  border: 1px solid #ecece7;
-  border-radius: 14px;
-  background: #fbfbf9;
+  color: var(--black);
+  text-align: left;
 }
 
 .recent-item strong,
-.rank-item strong {
+.recent-item span,
+.recent-item small {
   display: block;
-  margin-bottom: 4px;
 }
 
-.recent-item small,
-.rank-item small {
+.recent-item span,
+.recent-item small {
   color: var(--muted);
   font-size: 12px;
+  margin-top: 4px;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 /* FILTROS */
@@ -419,6 +410,7 @@ button {
 .filters input,
 .filters select {
   width: 100%;
+  min-width: 0;
   min-height: 46px;
   border: 1px solid #d9d9d3;
   border-radius: 12px;
@@ -428,7 +420,11 @@ button {
   outline: none;
 }
 
-/* TABELA DESKTOP */
+/* DESKTOP */
+
+.desktop-leads {
+  display: block;
+}
 
 .table-wrap {
   width: 100%;
@@ -450,9 +446,9 @@ thead {
 
 th,
 td {
-  text-align: left;
   padding: 14px 13px;
   border-bottom: 1px solid #eeeeea;
+  text-align: left;
   white-space: nowrap;
 }
 
@@ -467,29 +463,128 @@ td {
   font-size: 14px;
 }
 
-tbody tr:hover {
-  background: #fffdf0;
-}
-
-.status-pill {
+.status-badge {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  background: #f1f1ed;
-  color: #33332f;
+  background: var(--soft);
   font-size: 12px;
   font-weight: 900;
 }
 
-.view-btn {
+.table-view-btn {
   border: 0;
   border-radius: 10px;
   padding: 9px 12px;
   background: var(--yellow);
   color: var(--black);
   font-weight: 900;
+}
+
+/* MOBILE CARDS */
+
+.mobile-leads-list {
+  display: none;
+}
+
+.mobile-lead-card {
+  width: 100%;
+  min-width: 0;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-lead-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.mobile-lead-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.mobile-label {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  margin-bottom: 5px;
+}
+
+.mobile-lead-main h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.mobile-status {
+  flex-shrink: 0;
+  max-width: 42%;
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: #33332f;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 900;
+  text-align: center;
+}
+
+.mobile-lead-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.mobile-info-item {
+  min-width: 0;
+  padding: 11px;
+  border-radius: 12px;
+  background: #fafaf7;
+  border: 1px solid #ecece7;
+}
+
+.mobile-info-item span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mobile-info-item strong,
+.mobile-info-item a {
+  display: block;
+  color: var(--black);
+  font-size: 13px;
+  line-height: 1.3;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.mobile-view-btn {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--yellow);
+  color: var(--black);
+  font-weight: 900;
+  font-size: 14px;
 }
 
 .empty {
@@ -569,6 +664,7 @@ dialog::backdrop {
 .edit-grid select,
 .observation-box textarea {
   width: 100%;
+  min-width: 0;
   border: 1px solid #dcdcd6;
   border-radius: 10px;
   padding: 10px 11px;
@@ -625,7 +721,7 @@ dialog::backdrop {
 }
 
 .notes-btn {
-  background: #f0f0ec;
+  background: var(--soft);
   color: var(--black);
   border: 1px solid #dadad4;
 }
@@ -656,58 +752,66 @@ dialog::backdrop {
 /* MOBILE */
 
 @media (max-width: 820px) {
+  html,
   body {
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
   }
 
   .app-shell {
     display: block;
+    width: 100%;
+    max-width: 100%;
   }
 
   .sidebar {
-    min-height: auto;
     position: static;
-    padding: 16px;
-    gap: 14px;
+    min-height: auto;
+    width: 100%;
+    padding: 15px;
+    gap: 13px;
   }
 
   .brand {
-    font-size: 22px;
+    font-size: 21px;
   }
 
   .sidebar nav {
-    display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
   .nav-item {
+    width: 100%;
     text-align: center;
-    padding: 12px 10px;
-    font-size: 14px;
+    padding: 12px 8px;
+    font-size: 13px;
   }
 
   .sidebar-foot {
     margin-top: 0;
-    padding-top: 3px;
   }
 
   .content {
-    padding: 16px;
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    overflow-x: hidden;
   }
 
   .topbar {
     align-items: flex-end;
-    margin-bottom: 16px;
+    margin-bottom: 15px;
   }
 
   .topbar h1 {
-    font-size: 28px;
+    font-size: 27px;
   }
 
   .secondary-btn {
-    padding: 10px 13px;
-    font-size: 13px;
+    padding: 10px 12px;
+    font-size: 12px;
   }
 
   .cards {
@@ -716,162 +820,70 @@ dialog::backdrop {
   }
 
   .metric-card {
-    padding: 17px;
+    padding: 16px;
   }
 
   .metric-card strong {
-    font-size: 30px;
+    font-size: 28px;
   }
 
   .panel {
-    padding: 14px;
+    width: 100%;
+    max-width: 100%;
+    padding: 13px;
     border-radius: 16px;
+    overflow: hidden;
   }
 
   .filters {
-    display: grid;
     grid-template-columns: 1fr;
     gap: 9px;
+    width: 100%;
   }
 
   .filters input,
   .filters select {
+    width: 100%;
+    max-width: 100%;
     min-height: 48px;
   }
 
-  /* A TABELA VIRA CARDS */
-
-  .table-wrap {
-    border: 0;
-    overflow: visible;
-    background: transparent;
-  }
-
-  table {
-    min-width: 0;
-    width: 100%;
-    display: block;
-  }
-
-  thead {
+  .desktop-leads {
     display: none;
   }
 
-  tbody {
+  .mobile-leads-list {
     display: grid;
+    width: 100%;
+    max-width: 100%;
     gap: 12px;
   }
 
-  tbody tr {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 12px;
+  .mobile-lead-card {
     width: 100%;
-    padding: 16px;
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    max-width: 100%;
   }
 
-  tbody tr:hover {
-    background: var(--white);
-  }
-
-  td {
-    display: block;
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    white-space: normal;
-    font-size: 13px;
-    overflow-wrap: anywhere;
-  }
-
-  td::before {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--muted);
-    font-size: 10px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  td:nth-child(1) {
-    grid-column: 1 / -1;
-  }
-
-  td:nth-child(1)::before {
-    content: "Cliente";
-  }
-
-  td:nth-child(2)::before {
-    content: "Telefone";
-  }
-
-  td:nth-child(3)::before {
-    content: "Cidade";
-  }
-
-  td:nth-child(4)::before {
-    content: "Produto";
-  }
-
-  td:nth-child(5)::before {
-    content: "Status";
-  }
-
-  td:nth-child(6)::before {
-    content: "Data";
-  }
-
-  td:nth-child(7) {
-    grid-column: 1 / -1;
-  }
-
-  td:nth-child(7)::before {
-    content: "";
-    display: none;
-  }
-
-  td:nth-child(1) strong {
-    display: block;
-    font-size: 17px;
-    line-height: 1.25;
-  }
-
-  .status-pill {
-    min-height: 26px;
-  }
-
-  .view-btn {
-    width: 100%;
-    min-height: 44px;
-    margin-top: 3px;
-  }
-
-  .recent-item,
-  .rank-item {
+  .recent-item {
     align-items: flex-start;
   }
 
-  /* FICHA MOBILE */
-
   dialog {
-    width: calc(100% - 20px);
-    max-height: calc(100vh - 20px);
+    width: calc(100% - 18px);
+    max-width: calc(100% - 18px);
+    max-height: calc(100vh - 18px);
     border-radius: 18px;
   }
 
   .dialog-content {
-    padding: 22px 16px 18px;
+    padding: 22px 15px 18px;
   }
 
   .dialog-content h2 {
     padding-right: 38px;
     font-size: 24px;
     line-height: 1.15;
+    overflow-wrap: anywhere;
   }
 
   .edit-grid {
@@ -897,37 +909,33 @@ dialog::backdrop {
 
 @media (max-width: 520px) {
   .login-screen {
-    padding: 16px;
+    padding: 15px;
   }
 
   .login-card {
-    padding: 28px 22px;
+    padding: 27px 20px;
     border-radius: 22px;
   }
 
   .login-card h1 {
-    font-size: 30px;
+    font-size: 29px;
   }
 
   .cards {
     grid-template-columns: 1fr;
   }
 
-  .topbar {
-    align-items: flex-start;
-  }
-
-  .topbar h1 {
-    font-size: 27px;
-  }
-
-  tbody tr {
+  .mobile-lead-info {
     grid-template-columns: 1fr;
   }
 
-  td:nth-child(1),
-  td:nth-child(7) {
-    grid-column: auto;
+  .mobile-status {
+    max-width: 46%;
+    font-size: 10px;
+  }
+
+  .mobile-lead-main h3 {
+    font-size: 17px;
   }
 
   .sidebar nav {
