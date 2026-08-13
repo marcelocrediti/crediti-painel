@@ -1,1105 +1,581 @@
-const SUPABASE_BASE = "https://vgdtywdpywezrwlrsawq.supabase.co";
-const SUPABASE_URL = `${SUPABASE_BASE}/rest/v1`;
-const SUPABASE_AUTH_URL = `${SUPABASE_BASE}/auth/v1`;
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffd400" />
+  <title>Crediti IA Painel</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
 
-const SUPABASE_KEY =
-  "sb_publishable_dmoTPKmglghAohv0MrRA9A_2zlUYhER";
+<body>
 
-const ADMIN_EMAIL =
-  "info@creditisolucoes.com.br";
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
 
-let allLeads = [];
-let currentLeadId = null;
-let accessToken =
-  sessionStorage.getItem("crediti_access_token") || "";
+      <div class="login-brand">
+        CREDITI IA
+      </div>
 
-const $ = (id) =>
-  document.getElementById(id);
+      <p class="eyebrow">
+        PAINEL INTERNO
+      </p>
 
-function fmtDate(value) {
-  if (!value) return "-";
+      <h1>
+        Acesso ao painel
+      </h1>
 
-  const date = new Date(value);
+      <p class="login-subtitle">
+        Entre com seu e-mail e sua senha.
+      </p>
 
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
+      <label class="login-field">
+        <span>E-mail</span>
 
-  return date.toLocaleString("pt-BR");
-}
+        <input
+          id="emailInput"
+          type="email"
+          autocomplete="email"
+          placeholder="seuemail@exemplo.com"
+        />
+      </label>
 
-function normalizeStatus(status) {
-  const map = {
-    novo: "Novo",
-    dados_coletados: "Dados coletados",
-    em_atendimento: "Em atendimento",
-    encaminhado: "Encaminhado",
-    documentacao: "Documentação",
-    proposta_enviada: "Proposta enviada",
-    aprovado: "Aprovado",
-    nao_aprovado: "Não aprovado",
-    finalizado: "Finalizado"
-  };
+      <label class="login-field">
+        <span>Senha</span>
 
-  return map[status] || status || "Novo";
-}
+        <input
+          id="passwordInput"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Digite sua senha"
+        />
+      </label>
 
-function authHeaders(extra = {}) {
-  return {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${accessToken}`,
-    ...extra
-  };
-}
+      <button
+        id="loginBtn"
+        class="primary-btn login-btn"
+      >
+        ENTRAR
+      </button>
 
-/* =========================
-   LOGIN
-========================= */
+      <button
+        id="forgotPasswordBtn"
+        class="forgot-btn"
+        type="button"
+      >
+        Esqueci minha senha
+      </button>
 
-function showLogin() {
-  $("loginScreen").classList.remove("hidden");
-  $("appShell").classList.add("hidden");
+      <div
+        id="loginError"
+        class="login-error"
+      ></div>
 
-  setTimeout(() => {
-    $("pinInput")?.focus();
-  }, 50);
-}
+      <div
+        id="loginSuccess"
+        class="login-success"
+      ></div>
 
-function showApp() {
-  $("loginScreen").classList.add("hidden");
-  $("appShell").classList.remove("hidden");
-}
+    </div>
+  </section>
 
-async function loginWithPin() {
-  const pin =
-    $("pinInput").value.trim();
+  <div
+    id="appShell"
+    class="app-shell hidden"
+  >
 
-  $("loginError").textContent = "";
+    <aside class="sidebar">
 
-  if (!/^\d{6,12}$/.test(pin)) {
-    $("loginError").textContent =
-      "Digite sua senha numérica.";
-    return;
-  }
+      <div class="brand">
+        CREDITI IA
+      </div>
 
-  $("loginBtn").disabled = true;
-  $("loginBtn").textContent =
-    "Entrando...";
+      <nav>
 
-  try {
-    const response = await fetch(
-      `${SUPABASE_AUTH_URL}/token?grant_type=password`,
-      {
-        method: "POST",
+        <button
+          class="nav-item active"
+          data-view="dashboard"
+        >
+          Dashboard
+        </button>
 
-        headers: {
-          apikey: SUPABASE_KEY,
-          "Content-Type": "application/json"
-        },
+        <button
+          class="nav-item"
+          data-view="leads"
+        >
+          Clientes / Leads
+        </button>
 
-        body: JSON.stringify({
-          email: ADMIN_EMAIL,
-          password: pin
-        })
-      }
-    );
+      </nav>
 
-    const data =
-      await response.json();
+      <div class="sidebar-foot">
 
-    if (
-      !response.ok ||
-      !data.access_token
-    ) {
-      throw new Error(
-        "Senha incorreta."
-      );
-    }
+        <span>
+          Painel interno
+        </span>
 
-    accessToken =
-      data.access_token;
+        <button
+          id="logoutBtn"
+          class="logout-btn"
+        >
+          Sair
+        </button>
 
-    sessionStorage.setItem(
-      "crediti_access_token",
-      accessToken
-    );
+      </div>
 
-    $("pinInput").value = "";
+    </aside>
 
-    showApp();
+    <main class="content">
 
-    await loadLeads();
-  } catch (error) {
-    console.error(error);
+      <header class="topbar">
 
-    $("loginError").textContent =
-      "Senha incorreta.";
-  } finally {
-    $("loginBtn").disabled = false;
-    $("loginBtn").textContent =
-      "ENTRAR";
-  }
-}
+        <div>
 
-function logout() {
-  accessToken = "";
+          <p class="eyebrow">
+            CREDITI IA
+          </p>
 
-  sessionStorage.removeItem(
-    "crediti_access_token"
-  );
+          <h1 id="pageTitle">
+            Dashboard
+          </h1>
 
-  allLeads = [];
+        </div>
 
-  showLogin();
-}
+        <button
+          id="refreshBtn"
+          class="secondary-btn"
+        >
+          Atualizar
+        </button>
 
-/* =========================
-   CARREGAR LEADS
-========================= */
+      </header>
 
-async function loadLeads() {
-  if (!accessToken) {
-    showLogin();
-    return;
-  }
+      <section
+        id="dashboardView"
+        class="view active"
+      >
 
-  const response = await fetch(
-    `${SUPABASE_URL}/leads?select=*&order=created_at.desc`,
-    {
-      headers: authHeaders()
-    }
-  );
+        <div class="cards">
 
-  if (
-    response.status === 401 ||
-    response.status === 403
-  ) {
-    logout();
-    throw new Error(
-      "Sessão expirada."
-    );
-  }
+          <article class="metric-card">
 
-  if (!response.ok) {
-    throw new Error(
-      await response.text()
-    );
-  }
+            <span>
+              Total de leads
+            </span>
 
-  allLeads =
-    await response.json();
-
-  renderDashboard();
-  fillProductFilter();
-  renderLeads();
-}
-
-/* =========================
-   DASHBOARD
-========================= */
-
-function renderDashboard() {
-  $("metricTotal").textContent =
-    allLeads.length;
-
-  const today = new Date();
-
-  const sameDay = (value) => {
-    const date =
-      new Date(value);
-
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
-
-  $("metricToday").textContent =
-    allLeads.filter(
-      (lead) =>
-        sameDay(lead.created_at)
-    ).length;
-
-  $("metricOpen").textContent =
-    allLeads.filter((lead) =>
-      [
-        "novo",
-        "dados_coletados",
-        "em_atendimento",
-        "documentacao",
-        "proposta_enviada"
-      ].includes(
-        lead.status || "novo"
-      )
-    ).length;
-
-  $("metricForwarded").textContent =
-    allLeads.filter(
-      (lead) =>
-        lead.status ===
-        "encaminhado"
-    ).length;
-
-  const recent =
-    allLeads.slice(0, 6);
-
-  $("recentList").innerHTML =
-    recent
-      .map(
-        (lead) => `
-          <div class="recent-item">
-            <div>
-              <strong>
-                ${escapeHtml(
-                  lead.nome ||
-                    "Sem nome"
-                )}
-              </strong>
-
-              <small>
-                ${escapeHtml(
-                  lead.cidade || "-"
-                )}
-                ·
-                ${escapeHtml(
-                  lead.produto_interesse ||
-                    "Sem produto"
-                )}
-              </small>
-            </div>
-
-            <small>
-              ${fmtDate(
-                lead.created_at
-              )}
-            </small>
-          </div>
-        `
-      )
-      .join("") ||
-    '<div class="empty">Nenhum lead ainda.</div>';
-
-  const counts = {};
-
-  allLeads.forEach((lead) => {
-    const product =
-      lead.produto_interesse ||
-      "Não informado";
-
-    counts[product] =
-      (counts[product] || 0) +
-      1;
-  });
-
-  $("productsRanking").innerHTML =
-    Object.entries(counts)
-      .sort(
-        (a, b) =>
-          b[1] - a[1]
-      )
-      .slice(0, 6)
-      .map(
-        ([product, count]) => `
-          <div class="rank-item">
-            <div>
-              <strong>
-                ${escapeHtml(
-                  product
-                )}
-              </strong>
-
-              <small>
-                interesses registrados
-              </small>
-            </div>
-
-            <strong>
-              ${count}
+            <strong id="metricTotal">
+              0
             </strong>
+
+          </article>
+
+          <article class="metric-card">
+
+            <span>
+              Hoje
+            </span>
+
+            <strong id="metricToday">
+              0
+            </strong>
+
+          </article>
+
+          <article class="metric-card">
+
+            <span>
+              Em atendimento
+            </span>
+
+            <strong id="metricOpen">
+              0
+            </strong>
+
+          </article>
+
+          <article class="metric-card">
+
+            <span>
+              Encaminhados
+            </span>
+
+            <strong id="metricForwarded">
+              0
+            </strong>
+
+          </article>
+
+        </div>
+
+        <div class="panel-grid">
+
+          <section class="panel">
+
+            <div class="panel-head">
+
+              <div>
+
+                <h2>
+                  Leads recentes
+                </h2>
+
+                <p>
+                  Últimos atendimentos recebidos pela Crediti IA.
+                </p>
+
+              </div>
+
+            </div>
+
+            <div
+              id="recentList"
+              class="recent-list"
+            ></div>
+
+          </section>
+
+          <section class="panel">
+
+            <div class="panel-head">
+
+              <div>
+
+                <h2>
+                  Produtos mais procurados
+                </h2>
+
+                <p>
+                  Visão rápida por interesse.
+                </p>
+
+              </div>
+
+            </div>
+
+            <div
+              id="productsRanking"
+              class="ranking"
+            ></div>
+
+          </section>
+
+        </div>
+
+      </section>
+
+      <section
+        id="leadsView"
+        class="view"
+      >
+
+        <section class="panel">
+
+          <div class="filters">
+
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Buscar por nome, telefone ou cidade"
+            />
+
+            <select id="productFilter">
+
+              <option value="">
+                Todos os produtos
+              </option>
+
+            </select>
+
+            <select id="statusFilter">
+
+              <option value="">
+                Todos os status
+              </option>
+
+              <option value="novo">
+                Novo
+              </option>
+
+              <option value="dados_coletados">
+                Dados coletados
+              </option>
+
+              <option value="em_atendimento">
+                Em atendimento
+              </option>
+
+              <option value="encaminhado">
+                Encaminhado
+              </option>
+
+              <option value="documentacao">
+                Documentação
+              </option>
+
+              <option value="proposta_enviada">
+                Proposta enviada
+              </option>
+
+              <option value="aprovado">
+                Aprovado
+              </option>
+
+              <option value="nao_aprovado">
+                Não aprovado
+              </option>
+
+              <option value="finalizado">
+                Finalizado
+              </option>
+
+            </select>
+
           </div>
-        `
-      )
-      .join("") ||
-    '<div class="empty">Sem dados.</div>';
-}
 
-/* =========================
-   FILTROS
-========================= */
+          <div class="table-wrap">
 
-function fillProductFilter() {
-  const current =
-    $("productFilter").value;
+            <table>
 
-  const products = [
-    ...new Set(
-      allLeads
-        .map(
-          (lead) =>
-            lead.produto_interesse
-        )
-        .filter(Boolean)
-    )
-  ].sort();
+              <thead>
 
-  $("productFilter").innerHTML =
-    '<option value="">Todos os produtos</option>' +
-    products
-      .map(
-        (product) => `
-          <option
-            value="${escapeAttr(
-              product
-            )}"
+                <tr>
+                  <th>Cliente</th>
+                  <th>Telefone</th>
+                  <th>Cidade</th>
+                  <th>Produto</th>
+                  <th>Status</th>
+                  <th>Data</th>
+                  <th></th>
+                </tr>
+
+              </thead>
+
+              <tbody id="leadsTableBody"></tbody>
+
+            </table>
+
+          </div>
+
+          <div
+            id="emptyState"
+            class="empty hidden"
           >
-            ${escapeHtml(
-              product
-            )}
-          </option>
-        `
-      )
-      .join("");
-
-  $("productFilter").value =
-    current;
-}
-
-/* =========================
-   LISTA DE LEADS
-========================= */
-
-function renderLeads() {
-  const search =
-    $("searchInput")
-      .value
-      .trim()
-      .toLowerCase();
-
-  const product =
-    $("productFilter").value;
-
-  const status =
-    $("statusFilter").value;
-
-  const filtered =
-    allLeads.filter(
-      (lead) => {
-        const haystack =
-          `
-            ${lead.nome || ""}
-            ${lead.telefone || ""}
-            ${lead.cidade || ""}
-            ${lead.produto_interesse || ""}
-            ${lead.observacao || ""}
-          `.toLowerCase();
-
-        return (
-          (
-            !search ||
-            haystack.includes(
-              search
-            )
-          ) &&
-          (
-            !product ||
-            lead.produto_interesse ===
-              product
-          ) &&
-          (
-            !status ||
-            lead.status ===
-              status
-          )
-        );
-      }
-    );
-
-  $("leadsTableBody").innerHTML =
-    filtered
-      .map(
-        (lead) => `
-          <tr>
-            <td>
-              <strong>
-                ${escapeHtml(
-                  lead.nome ||
-                    "Sem nome"
-                )}
-              </strong>
-            </td>
-
-            <td>
-              ${escapeHtml(
-                lead.telefone || "-"
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                lead.cidade || "-"
-              )}
-            </td>
-
-            <td>
-              ${escapeHtml(
-                lead.produto_interesse ||
-                  "-"
-              )}
-            </td>
-
-            <td>
-              <span
-                class="status-pill"
-              >
-                ${escapeHtml(
-                  normalizeStatus(
-                    lead.status
-                  )
-                )}
-              </span>
-            </td>
-
-            <td>
-              ${fmtDate(
-                lead.created_at
-              )}
-            </td>
-
-            <td>
-              <button
-                class="view-btn"
-                data-id="${lead.id}"
-              >
-                Ver ficha
-              </button>
-            </td>
-          </tr>
-        `
-      )
-      .join("");
-
-  $("emptyState")
-    .classList
-    .toggle(
-      "hidden",
-      filtered.length > 0
-    );
-
-  document
-    .querySelectorAll(
-      ".view-btn"
-    )
-    .forEach(
-      (button) => {
-        button.addEventListener(
-          "click",
-          () => {
-            openLead(
-              button.dataset.id
-            );
-          }
-        );
-      }
-    );
-}
-
-function findLeadById(id) {
-  return allLeads.find(
-    (lead) =>
-      String(lead.id) ===
-      String(id)
-  );
-}
-
-/* =========================
-   FICHA
-========================= */
-
-function openLead(id) {
-  const lead =
-    findLeadById(id);
-
-  if (!lead) return;
-
-  currentLeadId =
-    lead.id;
-
-  $("detailName").textContent =
-    lead.nome || "Cliente";
-
-  $("editName").value =
-    lead.nome || "";
-
-  $("editPhone").value =
-    lead.telefone || "";
-
-  $("editCity").value =
-    lead.cidade || "";
-
-  $("editProduct").value =
-    lead.produto_interesse ||
-    "";
-
-  $("editStatus").value =
-    lead.status || "novo";
-
-  $("detailOrigin").textContent =
-    lead.origem || "crediti_ia";
-
-  $("detailDate").textContent =
-    fmtDate(lead.created_at);
-
-  $("leadNotes").value =
-    lead.observacao || "";
-
-  configureWhatsApp(
-    lead.telefone
-  );
-
-  $("leadDialog").showModal();
-}
-
-/* =========================
-   WHATSAPP
-========================= */
-
-function normalizeBrazilPhone(
-  phone
-) {
-  let digits =
-    String(phone || "")
-      .replace(/\D/g, "");
-
-  if (!digits) {
-    return "";
-  }
-
-  if (
-    digits.startsWith("55") &&
-    (
-      digits.length === 12 ||
-      digits.length === 13
-    )
-  ) {
-    return digits;
-  }
-
-  if (
-    digits.length === 10 ||
-    digits.length === 11
-  ) {
-    return `55${digits}`;
-  }
-
-  return "";
-}
-
-function configureWhatsApp(
-  phone
-) {
-  const button =
-    $("whatsappLink");
-
-  const number =
-    normalizeBrazilPhone(
-      phone
-    );
-
-  if (!number) {
-    button.href = "#";
-
-    button.onclick = (
-      event
-    ) => {
-      event.preventDefault();
-
-      alert(
-        "Telefone inválido."
-      );
-    };
-
-    return;
-  }
-
-  const message =
-    "Olá! Aqui é da Crediti. Estou entrando em contato sobre seu atendimento.";
-
-  button.href =
-    `https://api.whatsapp.com/send?phone=${number}&text=${encodeURIComponent(
-      message
-    )}`;
-
-  button.target =
-    "_blank";
-
-  button.rel =
-    "noopener noreferrer";
-
-  button.onclick = null;
-}
-
-/* =========================
-   ATUALIZAR LEAD
-========================= */
-
-async function updateLead(
-  id,
-  data
-) {
-  const response = await fetch(
-    `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(
-      id
-    )}`,
-    {
-      method: "PATCH",
-
-      headers: authHeaders({
-        "Content-Type":
-          "application/json",
-
-        Prefer:
-          "return=representation"
-      }),
-
-      body:
-        JSON.stringify(data)
-    }
-  );
-
-  if (
-    response.status === 401 ||
-    response.status === 403
-  ) {
-    logout();
-    throw new Error(
-      "Sessão expirada."
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      await response.text()
-    );
-  }
-
-  return await response.json();
-}
-
-async function saveCurrentLead() {
-  if (
-    currentLeadId === null
-  ) {
-    return;
-  }
-
-  const data = {
-    nome:
-      $("editName")
-        .value
-        .trim(),
-
-    telefone:
-      $("editPhone")
-        .value
-        .trim(),
-
-    cidade:
-      $("editCity")
-        .value
-        .trim(),
-
-    produto_interesse:
-      $("editProduct")
-        .value
-        .trim(),
-
-    status:
-      $("editStatus").value,
-
-    observacao:
-      $("leadNotes")
-        .value
-        .trim()
-  };
-
-  if (!data.nome) {
-    alert(
-      "O nome do cliente não pode ficar vazio."
-    );
-
-    return;
-  }
-
-  $("saveLeadBtn").disabled =
-    true;
-
-  $("saveLeadBtn").textContent =
-    "Salvando...";
-
-  try {
-    await updateLead(
-      currentLeadId,
-      data
-    );
-
-    await loadLeads();
-
-    openLead(
-      currentLeadId
-    );
-
-    showDialogMessage(
-      "Alterações salvas."
-    );
-  } catch (error) {
-    console.error(error);
-
-    showDialogMessage(
-      "Não foi possível salvar."
-    );
-  } finally {
-    $("saveLeadBtn").disabled =
-      false;
-
-    $("saveLeadBtn").textContent =
-      "Salvar alterações";
-  }
-}
-
-/* =========================
-   OBSERVAÇÃO
-========================= */
-
-async function saveNotesOnly() {
-  if (
-    currentLeadId === null
-  ) {
-    return;
-  }
-
-  const observation =
-    $("leadNotes")
-      .value
-      .trim();
-
-  $("saveNotesBtn").disabled =
-    true;
-
-  $("saveNotesBtn").textContent =
-    "Salvando...";
-
-  try {
-    await updateLead(
-      currentLeadId,
-      {
-        observacao:
-          observation
-      }
-    );
-
-    const lead =
-      findLeadById(
-        currentLeadId
-      );
-
-    if (lead) {
-      lead.observacao =
-        observation;
-    }
-
-    showDialogMessage(
-      "Observação salva."
-    );
-  } catch (error) {
-    console.error(error);
-
-    showDialogMessage(
-      "Não foi possível salvar a observação."
-    );
-  } finally {
-    $("saveNotesBtn").disabled =
-      false;
-
-    $("saveNotesBtn").textContent =
-      "Salvar observação";
-  }
-}
-
-/* =========================
-   APAGAR
-========================= */
-
-async function deleteLead(id) {
-  const response = await fetch(
-    `${SUPABASE_URL}/leads?id=eq.${encodeURIComponent(
-      id
-    )}`,
-    {
-      method: "DELETE",
-
-      headers: authHeaders()
-    }
-  );
-
-  if (
-    response.status === 401 ||
-    response.status === 403
-  ) {
-    logout();
-
-    throw new Error(
-      "Sessão expirada."
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      await response.text()
-    );
-  }
-}
-
-async function removeCurrentLead() {
-  const lead =
-    findLeadById(
-      currentLeadId
-    );
-
-  if (!lead) return;
-
-  const confirmed =
-    window.confirm(
-      `Apagar definitivamente o lead de ${lead.nome || "este cliente"}?`
-    );
-
-  if (!confirmed) return;
-
-  try {
-    await deleteLead(
-      currentLeadId
-    );
-
-    $("leadDialog").close();
-
-    currentLeadId = null;
-
-    await loadLeads();
-  } catch (error) {
-    console.error(error);
-
-    alert(
-      "Não foi possível apagar o lead."
-    );
-  }
-}
-
-/* =========================
-   MENSAGEM DA FICHA
-========================= */
-
-function showDialogMessage(
-  message
-) {
-  $("dialogMessage").textContent =
-    message;
-
-  clearTimeout(
-    showDialogMessage.timer
-  );
-
-  showDialogMessage.timer =
-    setTimeout(() => {
-      $("dialogMessage").textContent =
-        "";
-    }, 3000);
-}
-
-/* =========================
-   SEGURANÇA HTML
-========================= */
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
-}
-
-function escapeAttr(value) {
-  return escapeHtml(value);
-}
-
-/* =========================
-   NAVEGAÇÃO
-========================= */
-
-document
-  .querySelectorAll(
-    ".nav-item"
-  )
-  .forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        () => {
-          document
-            .querySelectorAll(
-              ".nav-item"
-            )
-            .forEach(
-              (item) =>
-                item.classList.remove(
-                  "active"
-                )
-            );
-
-          button.classList.add(
-            "active"
-          );
-
-          const view =
-            button.dataset.view;
-
-          document
-            .querySelectorAll(
-              ".view"
-            )
-            .forEach(
-              (item) =>
-                item.classList.remove(
-                  "active"
-                )
-            );
-
-          $(`${view}View`)
-            .classList
-            .add("active");
-
-          $("pageTitle")
-            .textContent =
-              view ===
-              "dashboard"
-                ? "Dashboard"
-                : "Clientes / Leads";
-        }
-      );
-    }
-  );
-
-/* =========================
-   EVENTOS
-========================= */
-
-[
-  "searchInput",
-  "productFilter",
-  "statusFilter"
-].forEach((id) => {
-  $(id).addEventListener(
-    id === "searchInput"
-      ? "input"
-      : "change",
-
-    renderLeads
-  );
-});
-
-$("refreshBtn")
-  .addEventListener(
-    "click",
-    () => {
-      loadLeads()
-        .catch(showError);
-    }
-  );
-
-$("closeDialog")
-  .addEventListener(
-    "click",
-    () => {
-      $("leadDialog").close();
-    }
-  );
-
-$("saveLeadBtn")
-  .addEventListener(
-    "click",
-    saveCurrentLead
-  );
-
-$("saveNotesBtn")
-  .addEventListener(
-    "click",
-    saveNotesOnly
-  );
-
-$("deleteLeadBtn")
-  .addEventListener(
-    "click",
-    removeCurrentLead
-  );
-
-$("loginBtn")
-  .addEventListener(
-    "click",
-    loginWithPin
-  );
-
-$("pinInput")
-  .addEventListener(
-    "keydown",
-    (event) => {
-      if (
-        event.key ===
-        "Enter"
-      ) {
-        loginWithPin();
-      }
-    }
-  );
-
-$("logoutBtn")
-  .addEventListener(
-    "click",
-    logout
-  );
-
-function showError(error) {
-  console.error(error);
-
-  if (accessToken) {
-    $("recentList").innerHTML =
-      '<div class="empty">Não foi possível carregar os leads.</div>';
-  }
-}
-
-/* =========================
-   INÍCIO
-========================= */
-
-if (accessToken) {
-  showApp();
-
-  loadLeads()
-    .catch(showError);
-} else {
-  showLogin();
-}
+            Nenhum lead encontrado.
+          </div>
+
+        </section>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <dialog id="leadDialog">
+
+    <button
+      id="closeDialog"
+      class="dialog-close"
+    >
+      ×
+    </button>
+
+    <div class="dialog-content">
+
+      <p class="eyebrow">
+        FICHA DO CLIENTE
+      </p>
+
+      <h2 id="detailName">
+        Cliente
+      </h2>
+
+      <div class="edit-grid">
+
+        <label>
+
+          <span>
+            Nome
+          </span>
+
+          <input
+            id="editName"
+            type="text"
+          />
+
+        </label>
+
+        <label>
+
+          <span>
+            Telefone
+          </span>
+
+          <input
+            id="editPhone"
+            type="text"
+          />
+
+        </label>
+
+        <label>
+
+          <span>
+            Cidade
+          </span>
+
+          <input
+            id="editCity"
+            type="text"
+          />
+
+        </label>
+
+        <label>
+
+          <span>
+            Produto
+          </span>
+
+          <input
+            id="editProduct"
+            type="text"
+          />
+
+        </label>
+
+        <label>
+
+          <span>
+            Status
+          </span>
+
+          <select id="editStatus">
+
+            <option value="novo">
+              Novo
+            </option>
+
+            <option value="dados_coletados">
+              Dados coletados
+            </option>
+
+            <option value="em_atendimento">
+              Em atendimento
+            </option>
+
+            <option value="encaminhado">
+              Encaminhado
+            </option>
+
+            <option value="documentacao">
+              Documentação
+            </option>
+
+            <option value="proposta_enviada">
+              Proposta enviada
+            </option>
+
+            <option value="aprovado">
+              Aprovado
+            </option>
+
+            <option value="nao_aprovado">
+              Não aprovado
+            </option>
+
+            <option value="finalizado">
+              Finalizado
+            </option>
+
+          </select>
+
+        </label>
+
+        <div class="read-only-field">
+
+          <span>
+            Origem
+          </span>
+
+          <strong id="detailOrigin">
+            -
+          </strong>
+
+        </div>
+
+        <div class="read-only-field full">
+
+          <span>
+            Data
+          </span>
+
+          <strong id="detailDate">
+            -
+          </strong>
+
+        </div>
+
+      </div>
+
+      <label class="observation-box">
+
+        <span>
+          Observações
+        </span>
+
+        <textarea
+          id="leadNotes"
+          rows="5"
+          placeholder="Digite aqui suas observações sobre o atendimento..."
+        ></textarea>
+
+      </label>
+
+      <div
+        id="dialogMessage"
+        class="dialog-message"
+      ></div>
+
+      <div class="dialog-actions">
+
+        <a
+          id="whatsappLink"
+          class="primary-btn"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Abrir WhatsApp
+        </a>
+
+        <button
+          id="saveNotesBtn"
+          class="notes-btn"
+        >
+          Salvar observação
+        </button>
+
+        <button
+          id="saveLeadBtn"
+          class="secondary-action-btn"
+        >
+          Salvar alterações
+        </button>
+
+        <button
+          id="deleteLeadBtn"
+          class="danger-btn"
+        >
+          Apagar lead
+        </button>
+
+      </div>
+
+    </div>
+
+  </dialog>
+
+  <script src="app.js"></script>
+
+</body>
+</html>
