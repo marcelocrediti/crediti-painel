@@ -177,6 +177,12 @@ function whatsappNumber(value = "") {
   return "";
 }
 
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod/i.test(
+    navigator.userAgent
+  );
+}
+
 function authHeaders(extra = {}) {
   return {
     apikey: SUPABASE_KEY,
@@ -1291,20 +1297,56 @@ function configureWhatsApp(lead) {
   const message =
     `Olá, ${getLeadName(lead)}! Aqui é da Crediti. Recebemos seu atendimento sobre ${getLeadProduct(lead)}.`;
 
-  button.href =
-    `https://web.whatsapp.com/send?phone=${encodeURIComponent(
-      phone
-    )}&text=${encodeURIComponent(
-      message
-    )}`;
+  button.href = "#";
 
-  button.target =
-    "_blank";
+  button.removeAttribute("target");
 
-  button.rel =
-    "noopener noreferrer";
+  button.onclick =
+    (event) => {
 
-  button.onclick = null;
+      event.preventDefault();
+
+      const encodedPhone =
+        encodeURIComponent(phone);
+
+      const encodedMessage =
+        encodeURIComponent(message);
+
+      if (isMobileDevice()) {
+
+        const appUrl =
+          `whatsapp://send?phone=${encodedPhone}&text=${encodedMessage}`;
+
+        const fallbackUrl =
+          `https://wa.me/${encodedPhone}?text=${encodedMessage}`;
+
+        window.location.href =
+          appUrl;
+
+        setTimeout(() => {
+
+          if (
+            document.visibilityState ===
+            "visible"
+          ) {
+            window.location.href =
+              fallbackUrl;
+          }
+
+        }, 1200);
+
+      } else {
+
+        const webUrl =
+          `https://web.whatsapp.com/send?phone=${encodedPhone}&text=${encodedMessage}`;
+
+        window.open(
+          webUrl,
+          "_blank",
+          "noopener,noreferrer"
+        );
+      }
+    };
 }
 
 
