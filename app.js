@@ -954,10 +954,7 @@ function renderMobileCards() {
             <div class="mobile-lead-info">
 
               <div class="mobile-info-item">
-
-                <span>
-                  Telefone
-                </span>
+                <span>Telefone</span>
 
                 <strong>
                   ${escapeHtml(
@@ -966,56 +963,40 @@ function renderMobileCards() {
                     )
                   )}
                 </strong>
-
               </div>
 
               <div class="mobile-info-item">
-
-                <span>
-                  Cidade
-                </span>
+                <span>Cidade</span>
 
                 <strong>
                   ${escapeHtml(
                     getLeadCity(lead)
                   )}
                 </strong>
-
               </div>
 
               <div class="mobile-info-item">
-
-                <span>
-                  Produto
-                </span>
+                <span>Produto</span>
 
                 <strong>
                   ${escapeHtml(
                     getLeadProduct(lead)
                   )}
                 </strong>
-
               </div>
 
               <div class="mobile-info-item">
-
-                <span>
-                  Responsável
-                </span>
+                <span>Responsável</span>
 
                 <strong>
                   ${escapeHtml(
                     getLeadResponsible(lead)
                   )}
                 </strong>
-
               </div>
 
               <div class="mobile-info-item">
-
-                <span>
-                  Data
-                </span>
+                <span>Data</span>
 
                 <strong>
                   ${escapeHtml(
@@ -1024,7 +1005,6 @@ function renderMobileCards() {
                     )
                   )}
                 </strong>
-
               </div>
 
             </div>
@@ -1312,7 +1292,9 @@ function configureWhatsApp(lead) {
     `Olá, ${getLeadName(lead)}! Aqui é da Crediti. Recebemos seu atendimento sobre ${getLeadProduct(lead)}.`;
 
   button.href =
-    `https://wa.me/${phone}?text=${encodeURIComponent(
+    `https://web.whatsapp.com/send?phone=${encodeURIComponent(
+      phone
+    )}&text=${encodeURIComponent(
       message
     )}`;
 
