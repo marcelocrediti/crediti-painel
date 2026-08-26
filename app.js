@@ -10,12 +10,33 @@ const SUPABASE_AUTH =
 const SUPABASE_KEY =
   "sb_publishable_dmoTPKmglghAohv0MrRA9A_2zlUYhER";
 
+const COLLECTIONS_SUPABASE_BASE =
+  "https://taxdccpyswsqtklibenp.supabase.co";
+
+const COLLECTIONS_SUPABASE_REST =
+  `${COLLECTIONS_SUPABASE_BASE}/rest/v1`;
+
+const COLLECTIONS_SUPABASE_AUTH =
+  `${COLLECTIONS_SUPABASE_BASE}/auth/v1`;
+
+const COLLECTIONS_SUPABASE_KEY =
+  "sb_publishable_wg_r1CZxd0vEG_yFsJ0fpA_4byqtC4f";
+
 const PANEL_URL =
   "https://marcelocrediti.github.io/crediti-painel/";
 
 let allLeads = [];
 let filteredLeads = [];
 let currentLeadId = null;
+
+let allCollections = [];
+let filteredCollections = [];
+let currentCollectionId = null;
+
+let collectionsAccessToken =
+  sessionStorage.getItem(
+    "crediti_collections_access_token"
+  ) || "";
 
 let accessToken =
   localStorage.getItem("crediti_access_token") || "";
@@ -60,6 +81,73 @@ function fmtDate(value) {
   }
 
   return date.toLocaleString("pt-BR");
+}
+
+function fmtCurrency(value) {
+  const number = Number(value || 0);
+
+  return number.toLocaleString(
+    "pt-BR",
+    {
+      style: "currency",
+      currency: "BRL"
+    }
+  );
+}
+
+function parseCurrency(value = "") {
+  const normalized = String(value)
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
+
+  const number = Number(normalized);
+
+  return Number.isFinite(number)
+    ? number
+    : 0;
+}
+
+function fmtDateOnly(value) {
+  if (!value) return "-";
+
+  const parts = String(value)
+    .slice(0, 10)
+    .split("-");
+
+  if (parts.length !== 3) return "-";
+
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function toLocalDateTimeInput(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const offset = date.getTimezoneOffset();
+  const local = new Date(
+    date.getTime() - offset * 60000
+  );
+
+  return local.toISOString().slice(0, 16);
+}
+
+function normalizeCollectionStatus(status) {
+  const map = {
+    pendente: "Pendente",
+    enviada: "Enviada",
+    visualizada: "Visualizada",
+    negociando: "Negociando",
+    paga: "Paga",
+    suspensa: "Suspensa"
+  };
+
+  return map[status] || "Pendente";
 }
 
 function normalizeStatus(status) {
@@ -198,6 +286,21 @@ function publicHeaders(extra = {}) {
   };
 }
 
+function collectionAuthHeaders(extra = {}) {
+  return {
+    apikey: COLLECTIONS_SUPABASE_KEY,
+    Authorization: `Bearer ${collectionsAccessToken}`,
+    ...extra
+  };
+}
+
+function collectionPublicHeaders(extra = {}) {
+  return {
+    apikey: COLLECTIONS_SUPABASE_KEY,
+    ...extra
+  };
+}
+
 function clearLoginMessages() {
   if ($("loginError")) {
     $("loginError").textContent = "";
@@ -318,7 +421,7 @@ async function login() {
 
     showApp();
 
-    await loadLeads();
+    await loadPanelData();
 
   } catch (error) {
     console.error(error);
@@ -619,6 +722,15 @@ function logout() {
   filteredLeads = [];
   currentLeadId = null;
 
+  allCollections = [];
+  filteredCollections = [];
+  currentCollectionId = null;
+
+  collectionsAccessToken = "";
+  sessionStorage.removeItem(
+    "crediti_collections_access_token"
+  );
+
   window.location.href =
     PANEL_URL;
 }
@@ -690,6 +802,16 @@ async function loadLeads() {
     $("refreshBtn").textContent =
       "Atualizar";
   }
+}
+
+async function loadPanelData() {
+  const tasks = [loadLeads()];
+
+  if (collectionsAccessToken) {
+    tasks.push(loadCollections());
+  }
+
+  await Promise.all(tasks);
 }
 
 
@@ -1596,10 +1718,696 @@ async function deleteCurrentLead() {
 
 
 /* =========================================================
+   COBRANÇAS
+========================================================= */
+
+function lockCollections() {
+  collectionsAccessToken = "";
+
+  sessionStorage.removeItem(
+    "crediti_collections_access_token"
+  );
+
+  allCollections = [];
+  filteredCollections = [];
+  currentCollectionId = null;
+}
+
+function requestCollectionsAccess() {
+  $("collectionLoginPassword").value = "";
+  $("collectionLoginError").textContent = "";
+  $("collectionLoginDialog").showModal();
+
+  setTimeout(
+    () => $("collectionLoginPassword").focus(),
+    100
+  );
+}
+
+async function loginCollections() {
+  const email =
+    $("collectionLoginEmail").value.trim();
+
+  const password =
+    $("collectionLoginPassword").value;
+
+  $("collectionLoginError").textContent = "";
+
+  if (!password) {
+    $("collectionLoginError").textContent =
+      "Digite a senha exclusiva.";
+    return;
+  }
+
+  $("collectionLoginBtn").disabled = true;
+  $("collectionLoginBtn").textContent = "ENTRANDO...";
+
+  try {
+    const response = await fetch(
+      `${COLLECTIONS_SUPABASE_AUTH}/token?grant_type=password`,
+      {
+        method: "POST",
+        headers: collectionPublicHeaders({
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+          email,
+          password
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.access_token) {
+      throw new Error("Senha exclusiva incorreta.");
+    }
+
+    collectionsAccessToken = data.access_token;
+
+    sessionStorage.setItem(
+      "crediti_collections_access_token",
+      collectionsAccessToken
+    );
+
+    $("collectionLoginPassword").value = "";
+    $("collectionLoginDialog").close();
+
+    showView("cobrancas");
+    await loadCollections();
+
+  } catch (error) {
+    console.error(error);
+    $("collectionLoginError").textContent = error.message;
+  } finally {
+    $("collectionLoginBtn").disabled = false;
+    $("collectionLoginBtn").textContent =
+      "ENTRAR EM COBRANÇAS";
+  }
+}
+
+async function loadCollections() {
+  if (!accessToken) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `${COLLECTIONS_SUPABASE_REST}/cobrancas?select=*&order=created_at.desc`,
+      {
+        headers: collectionAuthHeaders()
+      }
+    );
+
+    if (
+      response.status === 401 ||
+      response.status === 403
+    ) {
+      lockCollections();
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        "A área de cobranças ainda precisa ser ativada no Supabase."
+      );
+    }
+
+    allCollections = Array.isArray(data)
+      ? data
+      : [];
+
+    applyCollectionFilters();
+    renderCollectionSummary();
+
+  } catch (error) {
+    console.error(error);
+
+    allCollections = [];
+    filteredCollections = [];
+    renderCollections();
+
+    $("collectionsEmptyState")
+      .classList
+      .remove("hidden");
+
+    $("collectionsEmptyState").textContent =
+      error.message;
+  }
+}
+
+function applyCollectionFilters() {
+  const search = normalizeText(
+    $("collectionSearchInput").value
+  );
+
+  const status =
+    $("collectionStatusFilter").value;
+
+  filteredCollections = allCollections.filter(
+    (collection) => {
+      const text = normalizeText(
+        [
+          collection.nome,
+          collection.telefone,
+          collection.contrato,
+          collection.produto,
+          collection.observacao
+        ].join(" ")
+      );
+
+      return (
+        (!search || text.includes(search)) &&
+        (!status || collection.status === status)
+      );
+    }
+  );
+
+  renderCollections();
+}
+
+function renderCollectionSummary() {
+  const active = allCollections.filter(
+    (collection) =>
+      !["paga", "suspensa"].includes(
+        collection.status
+      )
+  );
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const overdue = active.filter(
+    (collection) => {
+      if (!collection.vencimento) {
+        return false;
+      }
+
+      const dueDate = new Date(
+        `${collection.vencimento}T00:00:00`
+      );
+
+      return dueDate < today;
+    }
+  );
+
+  const openValue = active.reduce(
+    (total, collection) =>
+      total + Number(collection.valor || 0),
+    0
+  );
+
+  $("collectionOpenValue").textContent =
+    fmtCurrency(openValue);
+
+  $("collectionActiveCount").textContent =
+    active.length;
+
+  $("collectionOverdueCount").textContent =
+    overdue.length;
+
+  $("collectionPaidCount").textContent =
+    allCollections.filter(
+      (collection) => collection.status === "paga"
+    ).length;
+}
+
+function renderCollections() {
+  $("collectionsTableBody").innerHTML =
+    filteredCollections
+      .map(
+        (collection) => `
+          <tr>
+            <td><strong>${escapeHtml(collection.nome || "Cliente")}</strong></td>
+            <td>${escapeHtml(formatPhone(collection.telefone || ""))}</td>
+            <td>${escapeHtml(collection.contrato || "-")}</td>
+            <td><strong>${escapeHtml(fmtCurrency(collection.valor))}</strong></td>
+            <td>${escapeHtml(fmtDateOnly(collection.vencimento))}</td>
+            <td>
+              <span class="status-badge collection-status-${escapeHtml(collection.status || "pendente")}">
+                ${escapeHtml(normalizeCollectionStatus(collection.status))}
+              </span>
+            </td>
+            <td>
+              <button
+                class="table-view-btn"
+                data-collection-id="${escapeHtml(collection.id)}"
+                type="button"
+              >
+                Ver cobrança
+              </button>
+            </td>
+          </tr>
+        `
+      )
+      .join("");
+
+  $("mobileCollectionsList").innerHTML =
+    filteredCollections
+      .map(
+        (collection) => `
+          <article class="mobile-lead-card">
+            <div class="mobile-lead-top">
+              <div class="mobile-lead-main">
+                <span class="mobile-label">CLIENTE</span>
+                <h3>${escapeHtml(collection.nome || "Cliente")}</h3>
+              </div>
+              <span class="mobile-status collection-status-${escapeHtml(collection.status || "pendente")}">
+                ${escapeHtml(normalizeCollectionStatus(collection.status))}
+              </span>
+            </div>
+
+            <div class="mobile-lead-info">
+              <div class="mobile-info-item">
+                <span>Valor</span>
+                <strong>${escapeHtml(fmtCurrency(collection.valor))}</strong>
+              </div>
+              <div class="mobile-info-item">
+                <span>Vencimento</span>
+                <strong>${escapeHtml(fmtDateOnly(collection.vencimento))}</strong>
+              </div>
+              <div class="mobile-info-item">
+                <span>WhatsApp</span>
+                <strong>${escapeHtml(formatPhone(collection.telefone || ""))}</strong>
+              </div>
+              <div class="mobile-info-item">
+                <span>Contrato</span>
+                <strong>${escapeHtml(collection.contrato || "-")}</strong>
+              </div>
+            </div>
+
+            <button
+              class="mobile-view-btn"
+              type="button"
+              data-collection-id="${escapeHtml(collection.id)}"
+            >
+              Ver cobrança
+            </button>
+          </article>
+        `
+      )
+      .join("");
+
+  $("collectionsEmptyState")
+    .classList
+    .toggle(
+      "hidden",
+      filteredCollections.length > 0
+    );
+
+  if (!filteredCollections.length) {
+    $("collectionsEmptyState").textContent =
+      "Nenhuma cobrança encontrada.";
+  }
+}
+
+function clearCollectionForm() {
+  currentCollectionId = null;
+
+  $("collectionName").value = "";
+  $("collectionPhone").value = "";
+  $("collectionContract").value = "";
+  $("collectionProduct").value = "";
+  $("collectionValue").value = "";
+  $("collectionDueDate").value = "";
+  $("collectionStatus").value = "pendente";
+  $("collectionNextReminder").value = "";
+  $("collectionNotes").value = "";
+  $("collectionDialogMessage").textContent = "";
+  $("collectionDialogTitle").textContent = "Nova cobrança";
+
+  $("sendCollectionBtn").disabled = true;
+
+  $("deleteCollectionBtn")
+    .classList
+    .add("hidden");
+
+  $("collectionHistorySection")
+    .classList
+    .add("hidden");
+}
+
+function openNewCollection() {
+  clearCollectionForm();
+  $("collectionDialog").showModal();
+}
+
+function findCollectionById(id) {
+  return allCollections.find(
+    (collection) =>
+      String(collection.id) === String(id)
+  );
+}
+
+async function openCollection(id) {
+  const collection = findCollectionById(id);
+
+  if (!collection) return;
+
+  currentCollectionId = collection.id;
+
+  $("collectionDialogTitle").textContent =
+    collection.nome || "Cobrança";
+
+  $("collectionName").value = collection.nome || "";
+  $("collectionPhone").value = collection.telefone || "";
+  $("collectionContract").value = collection.contrato || "";
+  $("collectionProduct").value = collection.produto || "";
+  $("collectionValue").value = Number(collection.valor || 0)
+    .toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  $("collectionDueDate").value = collection.vencimento || "";
+  $("collectionStatus").value = collection.status || "pendente";
+  $("collectionNextReminder").value =
+    toLocalDateTimeInput(collection.proximo_lembrete);
+  $("collectionNotes").value = collection.observacao || "";
+  $("collectionDialogMessage").textContent = "";
+
+  $("sendCollectionBtn").disabled = false;
+
+  $("deleteCollectionBtn")
+    .classList
+    .remove("hidden");
+
+  $("collectionHistorySection")
+    .classList
+    .remove("hidden");
+
+  $("collectionDialog").showModal();
+
+  await loadCollectionHistory(collection.id);
+}
+
+function getCollectionPayload() {
+  const nome = $("collectionName").value.trim();
+  const telefone = $("collectionPhone").value.trim();
+  const valor = parseCurrency(
+    $("collectionValue").value
+  );
+
+  if (!nome) {
+    throw new Error("Digite o nome do cliente.");
+  }
+
+  if (!whatsappNumber(telefone)) {
+    throw new Error("Digite um WhatsApp válido com DDD.");
+  }
+
+  if (valor <= 0) {
+    throw new Error("Digite um valor maior que zero.");
+  }
+
+  if (!$("collectionDueDate").value) {
+    throw new Error("Informe a data de vencimento.");
+  }
+
+  const nextReminder =
+    $("collectionNextReminder").value;
+
+  return {
+    nome,
+    telefone,
+    contrato: $("collectionContract").value.trim(),
+    produto: $("collectionProduct").value.trim(),
+    valor,
+    vencimento: $("collectionDueDate").value,
+    status: $("collectionStatus").value,
+    proximo_lembrete: nextReminder
+      ? new Date(nextReminder).toISOString()
+      : null,
+    observacao: $("collectionNotes").value.trim(),
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function saveCollection() {
+  $("collectionDialogMessage").textContent = "";
+
+  let payload;
+
+  try {
+    payload = getCollectionPayload();
+  } catch (error) {
+    $("collectionDialogMessage").textContent = error.message;
+    return;
+  }
+
+  $("saveCollectionBtn").disabled = true;
+  $("saveCollectionBtn").textContent = "Salvando...";
+
+  try {
+    const isEditing = currentCollectionId !== null;
+    const url = isEditing
+      ? `${COLLECTIONS_SUPABASE_REST}/cobrancas?id=eq.${encodeURIComponent(currentCollectionId)}`
+      : `${COLLECTIONS_SUPABASE_REST}/cobrancas`;
+
+    const response = await fetch(
+      url,
+      {
+        method: isEditing ? "PATCH" : "POST",
+        headers: collectionAuthHeaders({
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        }),
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Cobrança:", data);
+      throw new Error("Não foi possível salvar a cobrança.");
+    }
+
+    if (!isEditing && data[0]) {
+      currentCollectionId = data[0].id;
+    }
+
+    $("collectionDialogMessage").textContent =
+      "Cobrança salva com sucesso.";
+
+    await loadCollections();
+
+    if (currentCollectionId) {
+      $("sendCollectionBtn").disabled = false;
+
+      $("deleteCollectionBtn")
+        .classList
+        .remove("hidden");
+
+      $("collectionHistorySection")
+        .classList
+        .remove("hidden");
+
+      await loadCollectionHistory(currentCollectionId);
+    }
+
+  } catch (error) {
+    console.error(error);
+    $("collectionDialogMessage").textContent = error.message;
+  } finally {
+    $("saveCollectionBtn").disabled = false;
+    $("saveCollectionBtn").textContent = "Salvar cobrança";
+  }
+}
+
+async function deleteCollection() {
+  const collection = findCollectionById(currentCollectionId);
+
+  if (!collection) return;
+
+  const confirmed = window.confirm(
+    `Deseja realmente apagar a cobrança de ${collection.nome}?`
+  );
+
+  if (!confirmed) return;
+
+  $("deleteCollectionBtn").disabled = true;
+
+  try {
+    const response = await fetch(
+      `${COLLECTIONS_SUPABASE_REST}/cobrancas?id=eq.${encodeURIComponent(currentCollectionId)}`,
+      {
+        method: "DELETE",
+        headers: collectionAuthHeaders()
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Não foi possível apagar a cobrança.");
+    }
+
+    $("collectionDialog").close();
+    currentCollectionId = null;
+    await loadCollections();
+
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    $("deleteCollectionBtn").disabled = false;
+  }
+}
+
+async function loadCollectionHistory(collectionId) {
+  $("collectionHistoryList").innerHTML =
+    '<div class="empty">Carregando histórico...</div>';
+
+  try {
+    const response = await fetch(
+      `${COLLECTIONS_SUPABASE_REST}/cobranca_eventos?select=*&cobranca_id=eq.${encodeURIComponent(collectionId)}&order=created_at.desc`,
+      {
+        headers: collectionAuthHeaders()
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error("Não foi possível carregar o histórico.");
+    }
+
+    $("collectionHistoryList").innerHTML =
+      data
+        .map(
+          (event) => `
+            <article class="history-item">
+              <div>
+                <strong>${escapeHtml(event.descricao)}</strong>
+                <span>${escapeHtml(event.tipo || "contato")}</span>
+              </div>
+              <small>${escapeHtml(fmtDate(event.created_at))}</small>
+            </article>
+          `
+        )
+        .join("") ||
+      '<div class="empty">Nenhum contato registrado.</div>';
+
+  } catch (error) {
+    $("collectionHistoryList").innerHTML =
+      `<div class="empty">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+async function addCollectionHistory() {
+  if (!currentCollectionId) return;
+
+  const description = window.prompt(
+    "O que aconteceu neste contato?"
+  );
+
+  if (!description || !description.trim()) return;
+
+  try {
+    const response = await fetch(
+      `${COLLECTIONS_SUPABASE_REST}/cobranca_eventos`,
+      {
+        method: "POST",
+        headers: collectionAuthHeaders({
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+          cobranca_id: currentCollectionId,
+          tipo: "contato_manual",
+          descricao: description.trim()
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Não foi possível registrar o contato.");
+    }
+
+    await loadCollectionHistory(currentCollectionId);
+
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function registerPreparedMessage(collectionId) {
+  try {
+    await fetch(
+      `${COLLECTIONS_SUPABASE_REST}/cobranca_eventos`,
+      {
+        method: "POST",
+        headers: collectionAuthHeaders({
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+          cobranca_id: collectionId,
+          tipo: "whatsapp_aberto",
+          descricao:
+            "Cobrança aberta no WhatsApp Business para envio manual."
+        })
+      }
+    );
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function sendCollectionWithWhatsApp() {
+  const collection =
+    findCollectionById(currentCollectionId);
+
+  if (!collection) {
+    alert("Salve a cobrança antes de enviar.");
+    return;
+  }
+
+  const phone = whatsappNumber(collection.telefone);
+
+  if (!phone) {
+    alert("O WhatsApp do cliente é inválido.");
+    return;
+  }
+
+  const message =
+    `Olá, ${collection.nome}! Este é um lembrete da Crediti sobre o pagamento no valor de ${fmtCurrency(collection.valor)}, com vencimento em ${fmtDateOnly(collection.vencimento)}. Se você já realizou o pagamento, desconsidere esta mensagem. Para negociar ou tirar dúvidas, responda por aqui. Crediti, crédito com responsabilidade.`;
+
+  const encodedPhone = encodeURIComponent(phone);
+  const encodedMessage = encodeURIComponent(message);
+
+  registerPreparedMessage(collection.id);
+
+  if (isMobileDevice()) {
+    const businessUrl =
+      `whatsapp-business://send?phone=${encodedPhone}&text=${encodedMessage}`;
+
+    const fallbackUrl =
+      `https://wa.me/${encodedPhone}?text=${encodedMessage}`;
+
+    window.location.href = businessUrl;
+
+    setTimeout(() => {
+      if (document.visibilityState === "visible") {
+        window.location.href = fallbackUrl;
+      }
+    }, 1200);
+
+  } else {
+    const webUrl =
+      `https://web.whatsapp.com/send?phone=${encodedPhone}&text=${encodedMessage}`;
+
+    window.open(
+      webUrl,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+}
+
+
+/* =========================================================
    NAVEGAÇÃO
 ========================================================= */
 
-function changeView(view) {
+function showView(view) {
   document
     .querySelectorAll(
       ".nav-item"
@@ -1629,10 +2437,30 @@ function changeView(view) {
     .classList
     .add("active");
 
+  const titles = {
+    dashboard: "Dashboard",
+    leads: "Clientes / Leads",
+    cobrancas: "Cobranças"
+  };
+
   $("pageTitle").textContent =
-    view === "dashboard"
-      ? "Dashboard"
-      : "Clientes / Leads";
+    titles[view] || "Painel";
+}
+
+function changeView(view) {
+  if (
+    view === "cobrancas" &&
+    !collectionsAccessToken
+  ) {
+    requestCollectionsAccess();
+    return;
+  }
+
+  showView(view);
+
+  if (view === "cobrancas") {
+    loadCollections();
+  }
 }
 
 
@@ -1655,6 +2483,20 @@ document.addEventListener(
     ) {
       openLead(
         leadButton.dataset.leadId
+      );
+    }
+
+    const collectionButton =
+      event.target.closest(
+        "[data-collection-id]"
+      );
+
+    if (
+      collectionButton &&
+      collectionButton.dataset.collectionId
+    ) {
+      openCollection(
+        collectionButton.dataset.collectionId
       );
     }
   }
@@ -1725,7 +2567,7 @@ $("logoutBtn")
 $("refreshBtn")
   .addEventListener(
     "click",
-    loadLeads
+    loadPanelData
   );
 
 $("searchInput")
@@ -1750,6 +2592,103 @@ $("responsibleFilter")
   .addEventListener(
     "change",
     applyFilters
+  );
+
+$("collectionSearchInput")
+  .addEventListener(
+    "input",
+    applyCollectionFilters
+  );
+
+$("collectionStatusFilter")
+  .addEventListener(
+    "change",
+    applyCollectionFilters
+  );
+
+$("newCollectionBtn")
+  .addEventListener(
+    "click",
+    openNewCollection
+  );
+
+$("closeCollectionDialog")
+  .addEventListener(
+    "click",
+    () => {
+      $("collectionDialog").close();
+    }
+  );
+
+$("saveCollectionBtn")
+  .addEventListener(
+    "click",
+    saveCollection
+  );
+
+$("deleteCollectionBtn")
+  .addEventListener(
+    "click",
+    deleteCollection
+  );
+
+$("addCollectionHistoryBtn")
+  .addEventListener(
+    "click",
+    addCollectionHistory
+  );
+
+$("sendCollectionBtn")
+  .addEventListener(
+    "click",
+    sendCollectionWithWhatsApp
+  );
+
+$("collectionLoginBtn")
+  .addEventListener(
+    "click",
+    loginCollections
+  );
+
+$("collectionLoginPassword")
+  .addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key === "Enter") {
+        loginCollections();
+      }
+    }
+  );
+
+$("closeCollectionLoginDialog")
+  .addEventListener(
+    "click",
+    () => {
+      $("collectionLoginDialog").close();
+    }
+  );
+
+$("collectionLoginDialog")
+  .addEventListener(
+    "click",
+    (event) => {
+      if (
+        event.target ===
+        $("collectionLoginDialog")
+      ) {
+        $("collectionLoginDialog").close();
+      }
+    }
+  );
+
+$("collectionDialog")
+  .addEventListener(
+    "click",
+    (event) => {
+      if (event.target === $("collectionDialog")) {
+        $("collectionDialog").close();
+      }
+    }
   );
 
 $("closeDialog")
@@ -1807,7 +2746,7 @@ if (openedFromRecovery) {
 } else if (accessToken) {
 
   showApp();
-  loadLeads();
+  loadPanelData();
 
 } else {
 

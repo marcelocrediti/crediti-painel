@@ -17,7 +17,7 @@
 
   <link
     rel="stylesheet"
-    href="styles.css?v=9"
+    href="styles.css?v=11"
   />
 </head>
 
@@ -144,6 +144,14 @@
           type="button"
         >
           Clientes / Leads
+        </button>
+
+        <button
+          class="nav-item"
+          data-view="cobrancas"
+          type="button"
+        >
+          Cobranças 🔒
         </button>
 
       </nav>
@@ -504,6 +512,114 @@
 
       </section>
 
+
+      <!-- =================================================
+           COBRANÇAS
+      ================================================== -->
+
+      <section
+        id="cobrancasView"
+        class="view"
+      >
+
+        <div class="collection-summary">
+
+          <article class="metric-card">
+            <span>Total em aberto</span>
+            <strong id="collectionOpenValue">R$ 0,00</strong>
+          </article>
+
+          <article class="metric-card">
+            <span>Cobranças ativas</span>
+            <strong id="collectionActiveCount">0</strong>
+          </article>
+
+          <article class="metric-card">
+            <span>Vencidas</span>
+            <strong id="collectionOverdueCount">0</strong>
+          </article>
+
+          <article class="metric-card">
+            <span>Pagas</span>
+            <strong id="collectionPaidCount">0</strong>
+          </article>
+
+        </div>
+
+        <section class="panel">
+
+          <div class="collection-toolbar">
+
+            <div class="filters collection-filters">
+
+              <input
+                id="collectionSearchInput"
+                type="search"
+                placeholder="Buscar por cliente, telefone ou contrato"
+              />
+
+              <select id="collectionStatusFilter">
+                <option value="">Todos os status</option>
+                <option value="pendente">Pendente</option>
+                <option value="enviada">Enviada</option>
+                <option value="visualizada">Visualizada</option>
+                <option value="negociando">Negociando</option>
+                <option value="paga">Paga</option>
+                <option value="suspensa">Suspensa</option>
+              </select>
+
+            </div>
+
+            <button
+              id="newCollectionBtn"
+              class="primary-compact-btn"
+              type="button"
+            >
+              + Nova cobrança
+            </button>
+
+          </div>
+
+          <div class="connection-notice">
+            <strong>WhatsApp Crediti Cobranças: (85) 98849-9143</strong>
+            <span id="whatsappConnectionStatus">Envio manual gratuito pelo WhatsApp Business.</span>
+          </div>
+
+          <div class="desktop-leads">
+            <div class="table-wrap collection-table-wrap">
+              <table class="collection-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Telefone</th>
+                    <th>Contrato</th>
+                    <th>Valor</th>
+                    <th>Vencimento</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="collectionsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div
+            id="mobileCollectionsList"
+            class="mobile-leads-list"
+          ></div>
+
+          <div
+            id="collectionsEmptyState"
+            class="empty hidden"
+          >
+            Nenhuma cobrança encontrada.
+          </div>
+
+        </section>
+
+      </section>
+
     </main>
 
   </div>
@@ -780,7 +896,190 @@
   </dialog>
 
 
-  <script src="app.js?v=9"></script>
+  <!-- =====================================================
+       FICHA DA COBRANÇA
+  ====================================================== -->
+
+  <dialog id="collectionDialog">
+
+    <button
+      id="closeCollectionDialog"
+      class="dialog-close"
+      type="button"
+    >
+      ×
+    </button>
+
+    <div class="dialog-content">
+
+      <p class="eyebrow">COBRANÇA CREDITI</p>
+
+      <h2 id="collectionDialogTitle">Nova cobrança</h2>
+
+      <div class="edit-grid">
+
+        <label>
+          <span>Nome do cliente</span>
+          <input id="collectionName" type="text" autocomplete="name" />
+        </label>
+
+        <label>
+          <span>WhatsApp</span>
+          <input id="collectionPhone" type="tel" inputmode="tel" />
+        </label>
+
+        <label>
+          <span>Contrato ou parcela</span>
+          <input id="collectionContract" type="text" />
+        </label>
+
+        <label>
+          <span>Produto</span>
+          <input id="collectionProduct" type="text" />
+        </label>
+
+        <label>
+          <span>Valor devido</span>
+          <input id="collectionValue" type="text" inputmode="decimal" placeholder="0,00" />
+        </label>
+
+        <label>
+          <span>Vencimento</span>
+          <input id="collectionDueDate" type="date" />
+        </label>
+
+        <label>
+          <span>Status</span>
+          <select id="collectionStatus">
+            <option value="pendente">Pendente</option>
+            <option value="enviada">Enviada</option>
+            <option value="visualizada">Visualizada</option>
+            <option value="negociando">Negociando</option>
+            <option value="paga">Paga</option>
+            <option value="suspensa">Suspensa</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Próximo lembrete</span>
+          <input id="collectionNextReminder" type="datetime-local" />
+        </label>
+
+      </div>
+
+      <label class="observation-box">
+        <span>Observações internas</span>
+        <textarea
+          id="collectionNotes"
+          rows="4"
+          placeholder="Acordos, contatos realizados ou informações importantes..."
+        ></textarea>
+      </label>
+
+      <section id="collectionHistorySection" class="collection-history hidden">
+        <div class="collection-history-head">
+          <strong>Histórico</strong>
+          <button id="addCollectionHistoryBtn" type="button">+ Registrar contato</button>
+        </div>
+        <div id="collectionHistoryList" class="collection-history-list"></div>
+      </section>
+
+      <div id="collectionDialogMessage" class="dialog-message"></div>
+
+      <div class="dialog-actions collection-actions">
+
+        <button
+          id="saveCollectionBtn"
+          class="secondary-action-btn"
+          type="button"
+        >
+          Salvar cobrança
+        </button>
+
+        <button
+          id="sendCollectionBtn"
+          class="primary-btn"
+          type="button"
+          disabled
+        >
+          Enviar pelo WhatsApp Business
+        </button>
+
+        <button
+          id="deleteCollectionBtn"
+          class="danger-btn hidden"
+          type="button"
+        >
+          Apagar cobrança
+        </button>
+
+      </div>
+
+    </div>
+
+  </dialog>
+
+
+  <!-- =====================================================
+       ACESSO EXCLUSIVO ÀS COBRANÇAS
+  ====================================================== -->
+
+  <dialog id="collectionLoginDialog" class="collection-login-dialog">
+
+    <button
+      id="closeCollectionLoginDialog"
+      class="dialog-close"
+      type="button"
+    >
+      ×
+    </button>
+
+    <div class="dialog-content">
+
+      <p class="eyebrow">ACESSO RESTRITO</p>
+      <h2>Cobranças 🔒</h2>
+
+      <p class="login-subtitle">
+        Digite a senha exclusiva do setor de cobranças.
+      </p>
+
+      <label class="login-field">
+        <span>E-mail</span>
+        <input
+          id="collectionLoginEmail"
+          type="email"
+          value="grupogsfec@gmail.com"
+          autocomplete="username"
+          readonly
+        />
+      </label>
+
+      <label class="login-field">
+        <span>Senha exclusiva</span>
+        <input
+          id="collectionLoginPassword"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Digite sua senha"
+        />
+      </label>
+
+      <button
+        id="collectionLoginBtn"
+        class="primary-btn"
+        type="button"
+      >
+        ENTRAR EM COBRANÇAS
+      </button>
+
+      <div id="collectionLoginError" class="login-error"></div>
+
+    </div>
+
+  </dialog>
+
+
+  <script src="app.js?v=11"></script>
 
 </body>
 </html>
