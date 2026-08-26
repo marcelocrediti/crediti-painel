@@ -1692,6 +1692,88 @@ dialog::backdrop {
     grid-template-columns: 1fr;
   }
 
+  /* COBRANÇA COMPACTA NO CELULAR */
+
+  #collectionDialog {
+    width: calc(100vw - 12px);
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+    margin: 12px auto;
+    border-radius: 18px 18px 0 0;
+  }
+
+  #collectionDialog .dialog-content {
+    height: 100%;
+    max-height: 100%;
+    padding: 18px 12px 0;
+    scroll-padding-top: 60px;
+  }
+
+  #collectionDialog .dialog-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--yellow);
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
+  }
+
+  #collectionDialog .dialog-content h2 {
+    margin-bottom: 13px;
+    font-size: 22px;
+  }
+
+  #collectionDialog .edit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  #collectionDialog .edit-grid label {
+    padding: 8px;
+    border-radius: 11px;
+  }
+
+  #collectionDialog .edit-grid label span {
+    margin-bottom: 5px;
+    font-size: 8px;
+    letter-spacing: 0.45px;
+  }
+
+  #collectionDialog .edit-grid input,
+  #collectionDialog .edit-grid select {
+    height: 39px;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+
+  #collectionDialog .observation-box {
+    margin-top: 8px;
+  }
+
+  #collectionDialog .observation-box textarea {
+    min-height: 70px;
+  }
+
+  #collectionDialog .collection-history {
+    margin-top: 10px;
+    padding: 10px;
+  }
+
+  #collectionDialog .collection-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 10px -12px 0;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.10);
+  }
+
+  #collectionDialog .collection-actions button {
+    min-height: 44px;
+    font-size: 11px;
+  }
+
 }
 
 
