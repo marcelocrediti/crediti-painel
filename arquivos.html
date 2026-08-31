@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#ffd400">
   <title>Documentos dos Clientes | Crediti</title>
   <link rel="stylesheet" href="arquivos.css?v=1">
+  <link rel="stylesheet" href="arquivos-extra.css?v=2">
 </head>
 <body>
   <header class="topbar">
@@ -48,12 +49,18 @@
     <div class="dialog-card folder-card">
       <button type="button" class="close" data-close="folderDialog">×</button>
       <div class="folder-head"><div><p class="eyebrow">PASTA DO CLIENTE</p><h2 id="folderName"></h2><span id="folderCpf"></span></div><div><button id="editClientBtn" class="light">Editar</button><button id="newContractBtn" class="primary">+ Novo contrato</button></div></div>
-      <div class="tabs"><button class="active" data-tab="personal">Documentos pessoais</button><button data-tab="contracts">Contratos</button><button data-tab="history">Histórico</button></div>
+      <div class="tabs"><button class="active" data-tab="personal">Documentos pessoais</button><button data-tab="contracts">Contratos</button><button data-tab="videos">Vídeos</button><button data-tab="history">Histórico</button></div>
       <section id="personalTab" class="tab active">
         <div class="upload-box"><select id="personalCategory"><option>RG</option><option>CPF</option><option>Comprovante de endereço</option><option>Contracheque</option><option>CNH</option><option>Outro documento</option></select><select id="personalResponsible"><option>Marcelino</option><option>Samila</option></select><input id="personalFiles" type="file" multiple><button id="uploadPersonalBtn" class="primary">Enviar documentos</button></div>
+        <div class="source-buttons">
+          <label class="source-btn">📁 Galeria ou arquivos<input id="personalGallery" type="file" accept="image/*,video/*,application/pdf" multiple></label>
+          <label class="source-btn">📷 Câmera do celular<input id="personalCamera" type="file" accept="image/*" capture="environment"></label>
+          <button id="personalScannerBtn" class="source-btn" type="button">🖨️ Impressora ou scanner</button>
+        </div>
         <div id="personalFileList" class="file-list"></div>
       </section>
       <section id="contractsTab" class="tab"><div id="contractList" class="contract-list"></div></section>
+      <section id="videosTab" class="tab"><div id="videoList" class="file-list"></div></section>
       <section id="historyTab" class="tab"><div id="historyList" class="history-list"></div></section>
     </div>
   </dialog>
@@ -81,6 +88,11 @@
       <button type="button" class="close" data-close="contractFilesDialog">×</button>
       <p class="eyebrow">ARQUIVOS DA OPERAÇÃO</p><h2 id="contractFilesTitle"></h2>
       <div class="upload-box"><select id="contractFileCategory"><option>Contrato</option><option>Vídeo da contratação</option><option>Foto</option><option>Comprovante</option><option>Outro arquivo</option></select><select id="contractFileResponsible"><option>Marcelino</option><option>Samila</option></select><input id="contractFiles" type="file" multiple><button id="uploadContractBtn" class="primary">Enviar arquivos</button></div>
+      <div class="source-buttons">
+        <label class="source-btn">📁 Galeria ou arquivos<input id="contractGallery" type="file" accept="image/*,video/*,application/pdf" multiple></label>
+        <label class="source-btn">📷 Câmera do celular<input id="contractCamera" type="file" accept="image/*" capture="environment"></label>
+        <button id="contractScannerBtn" class="source-btn" type="button">🖨️ Impressora ou scanner</button>
+      </div>
       <small>Vídeos: até 2 minutos e 30 MB. Os arquivos serão baixados individualmente, sem ZIP.</small>
       <div id="contractFileList" class="file-list"></div>
     </div>
