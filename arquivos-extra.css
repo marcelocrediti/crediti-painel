@@ -1,0 +1,43 @@
+.source-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: -4px 0 17px;
+}
+
+.source-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid #bbb;
+  border-radius: 11px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.source-btn input {
+  display: none;
+}
+
+.source-btn:hover {
+  border-color: #111;
+  background: #fffbea;
+}
+
+@media (max-width: 720px) {
+  .source-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .source-btn {
+    width: 100%;
+  }
+}
