@@ -68,7 +68,8 @@ $("personalCamera").onchange=()=>uploadFiles($("personalCamera"),$("personalCate
 $("contractGallery").onchange=()=>uploadFiles($("contractGallery"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
 $("contractCamera").onchange=()=>uploadFiles($("contractCamera"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
 
-$("personalScanner").onchange=()=>uploadFiles($("personalScanner"),$("personalCategory").value,$("personalResponsible").value);
-$("contractScanner").onchange=()=>uploadFiles($("contractScanner"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
+function openEpsonScanner(){window.location.href="creditiscan://abrir"}
+$("personalScannerBtn").onclick=openEpsonScanner;
+$("contractScannerBtn").onclick=openEpsonScanner;
 
 (async()=>{if(!await verify())return;try{await Promise.all([loadClients(),loadUsage()])}catch(e){showMessage(`Antes de usar, crie as tabelas no Supabase: ${e.message}`)}})();
