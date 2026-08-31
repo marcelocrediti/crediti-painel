@@ -67,7 +67,7 @@ async function uploadFiles(input,category,responsible,contractId=null){
       const response=await fetch(`${FILE_API}/upload?key=${encodeURIComponent(key)}`,{method:"POST",headers:{Authorization:`Bearer ${TOKEN}`,"Content-Type":file.type||"application/octet-stream","X-File-Name":encodeURIComponent(file.name)},body:file});
       const uploaded=await response.json().catch(()=>({}));
       if(!response.ok)throw new Error(uploaded.error||`Falha no envio de ${file.name}`);
-      const [doc]=await rest("arquivo_documentos",{method:"POST",body:JSON.stringify({cliente_id:currentClient.id,contrato_id:contractId,categoria,nome_original:file.name,storage_key:key,mime_type:file.type||"application/octet-stream",tamanho_bytes:uploaded.size||file.size,responsavel:responsible})});
+      const [doc]=await rest("arquivo_documentos",{method:"POST",body:JSON.stringify({cliente_id:currentClient.id,contrato_id:contractId,categoria:category,nome_original:file.name,storage_key:key,mime_type:file.type||"application/octet-stream",tamanho_bytes:uploaded.size||file.size,responsavel:responsible})});
       documents.unshift(doc);
       renderFolder();
       renderVideos();
