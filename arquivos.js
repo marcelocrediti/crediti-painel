@@ -51,7 +51,41 @@ async function saveContract(e){e.preventDefault();const type=$("contractType").v
 function openContractFiles(id){currentContract=contracts.find(c=>c.id===id)||currentContract;if(!currentContract)return;$("contractFilesTitle").textContent=`${currentContract.tipo}${currentContract.subtipo?` • ${currentContract.subtipo}`:""}`;renderFileList($("contractFileList"),documents.filter(d=>d.contrato_id===id&&!d.deleted_at));$("contractFilesDialog").showModal()}
 
 async function videoDuration(file){if(!file.type.startsWith("video/"))return 0;return new Promise((resolve,reject)=>{const v=document.createElement("video");v.preload="metadata";v.onloadedmetadata=()=>{URL.revokeObjectURL(v.src);resolve(v.duration)};v.onerror=()=>reject(new Error("Não foi possível verificar o vídeo"));v.src=URL.createObjectURL(file)})}
-async function uploadFiles(input,category,responsible,contractId=null){const files=[...input.files];if(!files.length)return alert("Escolha pelo menos um arquivo");for(const file of files){if(file.size>30*1048576){alert(`${file.name} ultrapassa 30 MB`);continue}if(await videoDuration(file)>120){alert(`${file.name} ultrapassa 2 minutos`);continue}const safe=file.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9._-]/g,"_");const key=`clientes/${currentClient.id}/${contractId?`contratos/${contractId}`:"documentos"}/${crypto.randomUUID()}-${safe}`;showMessage(`Enviando ${file.name}...`);const response=await fetch(`${FILE_API}/upload?key=${encodeURIComponent(key)}`,{method:"POST",headers:{Authorization:`Bearer ${TOKEN}`,"Content-Type":file.type||"application/octet-stream","X-File-Name":encodeURIComponent(file.name)},body:file});const uploaded=await response.json();if(!response.ok){alert(uploaded.error||"Falha no envio");continue}const [doc]=await rest("arquivo_documentos",{method:"POST",body:JSON.stringify({cliente_id:currentClient.id,contrato_id:contractId,categoria,nome_original:file.name,storage_key:key,mime_type:file.type,tamanho_bytes:uploaded.size||file.size,responsavel:responsible})});await log("Arquivo enviado",responsible,file.name,contractId,doc.id)}input.value="";await loadDocuments();await loadHistory();renderFolder();if(contractId)openContractFiles(contractId);loadUsage();showMessage("Arquivos enviados com segurança")}
+async function uploadFiles(input,category,responsible,contractId=null){
+  const files=[...input.files];
+  if(!files.length)return alert("Escolha pelo menos um arquivo");
+  input.disabled=true;
+  try{
+    for(const file of files){
+      if(file.size>30*1048576){alert(`${file.name} ultrapassa 30 MB`);continue}
+      let duration=0;
+      try{duration=await videoDuration(file)}catch(error){alert(`${file.name}: ${error.message}`);continue}
+      if(duration>120){alert(`${file.name} ultrapassa 2 minutos`);continue}
+      const safe=file.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9._-]/g,"_");
+      const key=`clientes/${currentClient.id}/${contractId?`contratos/${contractId}`:"documentos"}/${crypto.randomUUID()}-${safe}`;
+      showMessage(`Enviando ${file.name}...`);
+      const response=await fetch(`${FILE_API}/upload?key=${encodeURIComponent(key)}`,{method:"POST",headers:{Authorization:`Bearer ${TOKEN}`,"Content-Type":file.type||"application/octet-stream","X-File-Name":encodeURIComponent(file.name)},body:file});
+      const uploaded=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(uploaded.error||`Falha no envio de ${file.name}`);
+      const [doc]=await rest("arquivo_documentos",{method:"POST",body:JSON.stringify({cliente_id:currentClient.id,contrato_id:contractId,categoria,nome_original:file.name,storage_key:key,mime_type:file.type||"application/octet-stream",tamanho_bytes:uploaded.size||file.size,responsavel:responsible})});
+      documents.unshift(doc);
+      renderFolder();
+      renderVideos();
+      if(contractId)renderFileList($("contractFileList"),documents.filter(d=>d.contrato_id===contractId&&!d.deleted_at));
+      await log("Arquivo enviado",responsible,file.name,contractId,doc.id);
+    }
+    input.value="";
+    await loadHistory();
+    loadUsage();
+    showMessage("Arquivo enviado. Você já pode escolher o próximo documento.");
+  }catch(error){
+    alert(`Não foi possível enviar: ${error.message}`);
+    showMessage(`Erro no envio: ${error.message}`);
+  }finally{
+    input.disabled=false;
+    input.focus();
+  }
+}
 
 async function log(acao,responsavel,detalhes,contrato_id=null,documento_id=null){await rest("arquivo_historico",{method:"POST",body:JSON.stringify({cliente_id:currentClient.id,contrato_id,documento_id,acao,responsavel,detalhes})})}
 async function fileAction(action,id){const doc=documents.find(d=>d.id===id);if(!doc)return;if(action==="trash"){const who=prompt("Quem está apagando? Digite Marcelino ou Samila:",doc.responsavel)||"";if(!["Marcelino","Samila"].includes(who))return alert("Informe Marcelino ou Samila");await rest(`arquivo_documentos?id=eq.${id}`,{method:"PATCH",body:JSON.stringify({deleted_at:new Date().toISOString(),deleted_by:who})});await log("Arquivo movido para a lixeira",who,doc.nome_original,doc.contrato_id,doc.id);await loadDocuments();renderFolder();return}const r=await fetch(`${FILE_API}/file?key=${encodeURIComponent(doc.storage_key)}${action==="download"?"&download=1":""}`,{headers:{Authorization:`Bearer ${TOKEN}`}});if(!r.ok){const e=await r.json();return alert(e.error)}const blob=await r.blob();const url=URL.createObjectURL(blob);if(action==="view")window.open(url,"_blank");else if(action==="download"){const a=document.createElement("a");a.href=url;a.download=doc.nome_original;a.click()}else if(action==="share"){const file=new File([blob],doc.nome_original,{type:doc.mime_type||blob.type});if(navigator.canShare?.({files:[file]}))await navigator.share({title:`Documento de ${currentClient.nome}`,files:[file]});else{const a=document.createElement("a");a.href=url;a.download=doc.nome_original;a.click();alert("O arquivo foi baixado. Agora anexe no WhatsApp ou e-mail.")}}setTimeout(()=>URL.revokeObjectURL(url),60000)}
