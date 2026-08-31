@@ -30,13 +30,13 @@ New-Item -ItemType Directory -Force -Path $dir | Out-Null
 $launcherPath = Join-Path $dir 'abrir-epson.ps1'
 $launcher = @'
 $candidates = @(
-  (Join-Path $env:ProgramFiles 'EPSON\Epson Scan 2\Core\EpsonScan2.exe'),
-  (Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'EPSON\Epson Scan 2\Core\EpsonScan2.exe')
+  (Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'epson\Epson Scan 2\Core\es2launcher.exe'),
+  (Join-Path $env:ProgramFiles 'epson\Epson Scan 2\Core\es2launcher.exe')
 )
 $app = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $app) {
   $roots = @($env:ProgramFiles, [Environment]::GetFolderPath('ProgramFilesX86')) | Where-Object { $_ }
-  $app = Get-ChildItem $roots -Filter 'EpsonScan2.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+  $app = Get-ChildItem $roots -Filter 'es2launcher.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
 }
 if ($app) { Start-Process $app } else { Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Epson Scan 2 não foi encontrado.','Crediti Scanner') }
 '@
