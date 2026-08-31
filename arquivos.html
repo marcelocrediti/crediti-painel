@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffd400">
   <title>Documentos dos Clientes | Crediti</title>
   <link rel="stylesheet" href="arquivos.css?v=1">
-  <link rel="stylesheet" href="arquivos-extra.css?v=2">
+  <link rel="stylesheet" href="arquivos-extra.css?v=3">
 </head>
 <body>
   <header class="topbar">
@@ -55,13 +55,15 @@
         <div class="source-buttons">
           <label class="source-btn">📁 Galeria ou arquivos<input id="personalGallery" type="file" accept="image/*,video/*,application/pdf" multiple></label>
           <label class="source-btn">📷 Câmera do celular<input id="personalCamera" type="file" accept="image/*" capture="environment"></label>
-          <button id="personalScannerBtn" class="source-btn" type="button">🖨️ Escolher Epson e digitalizar</button>
-          <a class="source-btn" href="instalar-scanner.html">⚙️ Instalar ligação Epson</a>
         </div>
         <div id="personalFileList" class="file-list"></div>
       </section>
       <section id="contractsTab" class="tab"><div id="contractList" class="contract-list"></div></section>
-      <section id="videosTab" class="tab"><div id="videoList" class="file-list"></div></section>
+      <section id="videosTab" class="tab">
+        <div class="upload-box video-upload-box"><select id="videoResponsible"><option>Marcelino</option><option>Samila</option></select><input id="videoFiles" type="file" accept="video/*" multiple><button id="uploadVideoBtn" class="primary">Enviar vídeos</button></div>
+        <small>Vídeos de até 2 minutos e 30 MB cada.</small>
+        <div id="videoList" class="file-list"></div>
+      </section>
       <section id="historyTab" class="tab"><div id="historyList" class="history-list"></div></section>
     </div>
   </dialog>
@@ -92,8 +94,6 @@
       <div class="source-buttons">
         <label class="source-btn">📁 Galeria ou arquivos<input id="contractGallery" type="file" accept="image/*,video/*,application/pdf" multiple></label>
         <label class="source-btn">📷 Câmera do celular<input id="contractCamera" type="file" accept="image/*" capture="environment"></label>
-        <button id="contractScannerBtn" class="source-btn" type="button">🖨️ Escolher Epson e digitalizar</button>
-        <a class="source-btn" href="instalar-scanner.html">⚙️ Instalar ligação Epson</a>
       </div>
       <small>Vídeos: até 2 minutos e 30 MB. Os arquivos serão baixados individualmente, sem ZIP.</small>
       <div id="contractFileList" class="file-list"></div>
@@ -101,6 +101,6 @@
   </dialog>
 
   <dialog id="trashDialog"><div class="dialog-card"><button type="button" class="close" data-close="trashDialog">×</button><p class="eyebrow">ARQUIVOS APAGADOS</p><h2>Lixeira</h2><div id="trashList" class="file-list"></div></div></dialog>
-  <script src="arquivos.js?v=1"></script>
+  <script src="arquivos.js?v=2"></script>
 </body>
 </html>
