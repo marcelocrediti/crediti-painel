@@ -68,12 +68,7 @@ $("personalCamera").onchange=()=>uploadFiles($("personalCamera"),$("personalCate
 $("contractGallery").onchange=()=>uploadFiles($("contractGallery"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
 $("contractCamera").onchange=()=>uploadFiles($("contractCamera"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
 
-function openScanner(){
-  alert("A impressora precisa ter scanner e estar instalada neste computador. O Windows abrirá a área de impressoras. Digitalize pelo aplicativo da impressora ou pelo Scanner do Windows, salve o arquivo e depois clique em Galeria ou arquivos para enviar.");
-  window.location.href="ms-settings:printers";
-}
-
-$("personalScannerBtn").onclick=openScanner;
-$("contractScannerBtn").onclick=openScanner;
+$("personalScanner").onchange=()=>uploadFiles($("personalScanner"),$("personalCategory").value,$("personalResponsible").value);
+$("contractScanner").onchange=()=>uploadFiles($("contractScanner"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
 
 (async()=>{if(!await verify())return;try{await Promise.all([loadClients(),loadUsage()])}catch(e){showMessage(`Antes de usar, crie as tabelas no Supabase: ${e.message}`)}})();
