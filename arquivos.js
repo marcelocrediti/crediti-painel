@@ -25,7 +25,7 @@ async function rest(path, options={}){
 
 async function verify(){if(!TOKEN){location.href="index.html";return false}const r=await fetch(`${SUPABASE_AUTH}/user`,{headers:headers()});if(!r.ok){location.href="index.html";return false}return true}
 
-async function loadClients(){clients=await rest("arquivo_clientes?select=*&order=nome.asc");renderClients()}
+async function loadClients(){clients=await rest("arquivo_clientes?select=id,nome,cpf,telefone,cidade,observacoes&order=nome.asc");renderClients()}
 function renderClients(){const term=digits($("searchInput").value)||$("searchInput").value.toLowerCase().trim();const list=clients.filter(c=>c.nome.toLowerCase().includes(term)||c.cpf.includes(term));$("clientList").innerHTML=list.length?list.map(c=>`<article class="client-card" data-id="${c.id}"><h3>${escapeHtml(c.nome)}</h3><p>CPF: ${cpfView(c.cpf)}</p><p>${escapeHtml(c.cidade||"Cidade não informada")}</p><span class="badge">Abrir pasta</span></article>`).join(""):`<div class="empty">Nenhum cliente encontrado.</div>`}
 
 async function loadUsage(){try{const r=await fetch(`${FILE_API}/usage`,{headers:{Authorization:`Bearer ${TOKEN}`}});const u=await r.json();if(!r.ok)throw new Error(u.error);const gb=u.totalBytes/1073741824;$("usageText").textContent=`${gb.toFixed(2)} GB de 10 GB usados`;$("usageBar").style.width=`${Math.min(100,u.percentUsed)}%`;const box=document.querySelector(".usage-info");box.className="usage-info";if(gb>=9.5){box.classList.add("danger");$("usageAlert").textContent="ALERTA VERMELHO: próximo do limite e sujeito a cobrança"}else if(gb>=8){box.classList.add("warning");$("usageAlert").textContent="ALERTA AMARELO: armazenamento acima de 8 GB"}else $("usageAlert").textContent=`${u.totalFiles} arquivos armazenados com segurança`}catch(e){$("usageText").textContent="Uso indisponível"}}
@@ -35,7 +35,25 @@ function editClient(){if(!currentClient)return;$("clientDialogTitle").textConten
 
 async function saveClient(e){e.preventDefault();const body={nome:$("clientName").value.trim(),telefone:$("clientPhone").value.trim(),cidade:$("clientCity").value.trim(),observacoes:$("clientNotes").value.trim()};try{if(currentClient){const [saved]=await rest(`arquivo_clientes?id=eq.${currentClient.id}`,{method:"PATCH",body:JSON.stringify(body)});currentClient=saved}else{body.cpf=digits($("clientCpf").value);if(body.cpf.length!==11)throw new Error("Digite um CPF com 11 números");[currentClient]=await rest("arquivo_clientes",{method:"POST",body:JSON.stringify(body)})}$("clientDialog").close();await loadClients();await openFolder(currentClient.id);showMessage("Cliente salvo com sucesso") }catch(err){alert(err.message)} }
 
-async function openFolder(id){currentClient=clients.find(c=>c.id===id)||currentClient;if(!currentClient)return;$("folderName").textContent=currentClient.nome;$("folderCpf").textContent=`CPF: ${cpfView(currentClient.cpf)}`;await Promise.all([loadContracts(),loadDocuments(),loadHistory()]);renderFolder();$("folderDialog").showModal()}
+async function openFolder(id){
+  currentClient=clients.find(c=>c.id===id)||currentClient;
+  if(!currentClient)return;
+  $("folderName").textContent=currentClient.nome;
+  $("folderCpf").textContent=`CPF: ${cpfView(currentClient.cpf)}`;
+  contracts=[];
+  documents=[];
+  $("personalFileList").innerHTML='<div class="empty">Carregando documentos...</div>';
+  $("contractList").innerHTML='<div class="empty">Carregando contratos...</div>';
+  $("videoList").innerHTML='<div class="empty">Carregando vídeos...</div>';
+  $("historyList").innerHTML='<div class="empty">Carregando histórico...</div>';
+  $("folderDialog").showModal();
+  try{
+    await Promise.all([loadContracts(),loadDocuments(),loadHistory()]);
+    renderFolder();
+  }catch(error){
+    showMessage(`Não foi possível carregar a pasta: ${error.message}`);
+  }
+}
 async function loadContracts(){contracts=await rest(`arquivo_contratos?cliente_id=eq.${currentClient.id}&select=*&order=created_at.desc`)}
 async function loadDocuments(){documents=await rest(`arquivo_documentos?cliente_id=eq.${currentClient.id}&select=*&order=created_at.desc`);renderVideos()}
 function renderVideos(){const videos=documents.filter(d=>!d.deleted_at&&(d.mime_type||"").startsWith("video/"));if($("videoList"))renderFileList($("videoList"),videos)}
@@ -103,4 +121,17 @@ $("contractGallery").onchange=()=>uploadFiles($("contractGallery"),$("contractFi
 $("contractCamera").onchange=()=>uploadFiles($("contractCamera"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
 $("uploadVideoBtn").onclick=()=>uploadFiles($("videoFiles"),"Vídeo",$("videoResponsible").value);
 
-(async()=>{if(!await verify())return;try{await Promise.all([loadClients(),loadUsage()])}catch(e){showMessage(`Antes de usar, crie as tabelas no Supabase: ${e.message}`)}})();
+(async()=>{
+  if(!TOKEN){
+    location.href="index.html";
+    return;
+  }
+  $("clientList").innerHTML='<div class="empty">Carregando clientes...</div>';
+  loadUsage();
+  try{
+    await loadClients();
+  }catch(error){
+    $("clientList").innerHTML='<div class="empty">Não foi possível carregar os clientes.</div>';
+    showMessage(`Erro ao carregar: ${error.message}`);
+  }
+})();
