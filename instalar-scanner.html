@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Instalar ligação Epson | Crediti</title>
+  <style>
+    body{margin:0;background:#f5f5f2;color:#171717;font-family:Arial,sans-serif}.card{width:min(620px,90%);margin:8vh auto;background:#fff;border:1px solid #ddd;border-radius:22px;padding:30px;box-shadow:0 15px 50px #0001}.brand{font-size:27px;font-weight:900}.tag{display:inline-block;margin:15px 0;padding:7px 10px;border-radius:20px;background:#fff4ac;font-weight:800}h1{font-size:30px}li{margin:10px 0;line-height:1.4}button,a{display:block;width:100%;box-sizing:border-box;margin-top:15px;padding:15px;border:0;border-radius:12px;text-align:center;text-decoration:none;font-size:16px;font-weight:900;cursor:pointer}.install{background:#ffd400;color:#111}.back{background:#eee;color:#111}.note{color:#666;font-size:13px}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">CREDITI</div>
+    <span class="tag">Ligação Epson Scan 2</span>
+    <h1>Instalar neste computador</h1>
+    <ol>
+      <li>Clique no botão amarelo abaixo.</li>
+      <li>Abra o arquivo baixado.</li>
+      <li>A instalação abrirá o Epson Scan 2 para confirmar.</li>
+      <li>Depois volte ao painel e clique em “Escolher Epson e digitalizar”.</li>
+    </ol>
+    <button id="downloadBtn" class="install">Baixar instalador da Epson</button>
+    <a class="back" href="arquivos.html">Voltar aos documentos</a>
+    <p class="note">A instalação vale somente para este computador. Ela não altera seus documentos nem suas impressoras.</p>
+  </main>
+  <script>
+    const installer = String.raw`@echo off
+chcp 65001 >nul
+setlocal
+set "CREDITI_SCAN_DIR=%LOCALAPPDATA%\CreditiScanner"
+if not exist "%CREDITI_SCAN_DIR%" mkdir "%CREDITI_SCAN_DIR%"
+(
+echo $caminhos = @^^(
+echo   "$env:ProgramFiles\EPSON\Epson Scan 2\Core\EpsonScan2.exe",
+echo   "$^^([Environment]::GetFolderPath^^('ProgramFilesX86'^^)^^)\EPSON\Epson Scan 2\Core\EpsonScan2.exe"
+echo ^^^)
+echo $aplicativo = $caminhos ^^^| Where-Object { Test-Path $_ } ^^^| Select-Object -First 1
+echo if ^^^(-not $aplicativo^^^) {
+echo   $aplicativo = Get-ChildItem "$env:ProgramFiles", "$^^([Environment]::GetFolderPath^^('ProgramFilesX86'^^)^^)" -Filter "EpsonScan2.exe" -Recurse -ErrorAction SilentlyContinue ^^^| Select-Object -First 1 -ExpandProperty FullName
+echo }
+echo if ^^^($aplicativo^^^) { Start-Process $aplicativo } else { Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show^^^('Epson Scan 2 não foi encontrado.','Crediti Scanner'^^^) }
+) > "%CREDITI_SCAN_DIR%\abrir-epson.ps1"
+reg add "HKCU\Software\Classes\creditiscan" /ve /d "URL:Crediti Scanner" /f >nul
+reg add "HKCU\Software\Classes\creditiscan" /v "URL Protocol" /d "" /f >nul
+reg add "HKCU\Software\Classes\creditiscan\shell\open\command" /ve /d "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"%CREDITI_SCAN_DIR%\abrir-epson.ps1\"" /f >nul
+echo Ligacao do Epson Scan 2 instalada com sucesso.
+start "" powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%CREDITI_SCAN_DIR%\abrir-epson.ps1"
+pause`;
+
+    document.getElementById("downloadBtn").onclick = () => {
+      const blob = new Blob([installer], {type:"application/octet-stream"});
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "instalar-crediti-scanner.cmd";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+    };
+  </script>
+</body>
+</html>
