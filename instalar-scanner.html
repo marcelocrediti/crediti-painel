@@ -25,10 +25,6 @@
   </main>
   <script>
     const powershell = String.raw`$ErrorActionPreference = 'Stop'
-$dir = Join-Path $env:LOCALAPPDATA 'CreditiScanner'
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-$launcherPath = Join-Path $dir 'abrir-epson.ps1'
-$launcher = @'
 $candidates = @(
   (Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'epson\Epson Scan 2\Core\es2launcher.exe'),
   (Join-Path $env:ProgramFiles 'epson\Epson Scan 2\Core\es2launcher.exe')
@@ -38,19 +34,17 @@ if (-not $app) {
   $roots = @($env:ProgramFiles, [Environment]::GetFolderPath('ProgramFilesX86')) | Where-Object { $_ }
   $app = Get-ChildItem $roots -Filter 'es2launcher.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
 }
-if ($app) { Start-Process $app } else { Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('Epson Scan 2 não foi encontrado.','Crediti Scanner') }
-'@
-Set-Content -Path $launcherPath -Value $launcher -Encoding UTF8
+if (-not $app) { throw 'Epson Scan 2 não foi encontrado.' }
 $key = 'HKCU:\Software\Classes\creditiscan'
 New-Item -Path $key -Force | Out-Null
 Set-Item -Path $key -Value 'URL:Crediti Scanner'
 New-ItemProperty -Path $key -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
 $commandKey = Join-Path $key 'shell\open\command'
 New-Item -Path $commandKey -Force | Out-Null
-$command = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + $launcherPath + '"'
+$command = '"' + $app + '"'
 Set-Item -Path $commandKey -Value $command
 Write-Host 'Ligação Epson instalada corretamente.' -ForegroundColor Green
-& $launcherPath`;
+Start-Process $app`;
 
     function utf16Base64(text) {
       const bytes = new Uint8Array(text.length * 2);
