@@ -66,7 +66,25 @@ Write-Host 'Ligação Epson instalada corretamente.' -ForegroundColor Green
 
     const installer = `@echo off\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${utf16Base64(powershell)}\r\npause\r\n`;
 
-    document.getElementById("downloadBtn").onclick = () => {
+    document.getElementById("downloadBtn").onclick = async () => {
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: "instalar-crediti-scanner.cmd",
+            types: [{
+              description: "Instalador Crediti Epson",
+              accept: {"application/octet-stream": [".cmd"]}
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(installer);
+          await writable.close();
+          alert("Instalador salvo. Agora abra o arquivo instalar-crediti-scanner.cmd.");
+          return;
+        } catch (error) {
+          if (error.name === "AbortError") return;
+        }
+      }
       const blob = new Blob([installer], {type:"application/octet-stream"});
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
