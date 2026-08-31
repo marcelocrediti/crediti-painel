@@ -41,10 +41,11 @@ Set-Item -Path $key -Value 'URL:Crediti Scanner'
 New-ItemProperty -Path $key -Name 'URL Protocol' -Value '' -PropertyType String -Force | Out-Null
 $commandKey = Join-Path $key 'shell\open\command'
 New-Item -Path $commandKey -Force | Out-Null
-$command = '"' + $app + '"'
+$workingDirectory = Split-Path -Parent $app
+$command = 'cmd.exe /d /c start "" /d "' + $workingDirectory + '" "' + $app + '"'
 Set-Item -Path $commandKey -Value $command
 Write-Host 'Ligação Epson instalada corretamente.' -ForegroundColor Green
-Start-Process $app`;
+Start-Process -FilePath $app -WorkingDirectory $workingDirectory`;
 
     function utf16Base64(text) {
       const bytes = new Uint8Array(text.length * 2);
