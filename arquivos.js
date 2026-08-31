@@ -41,7 +41,7 @@ async function loadDocuments(){documents=await rest(`arquivo_documentos?cliente_
 function renderVideos(){const videos=documents.filter(d=>!d.deleted_at&&(d.mime_type||"").startsWith("video/"));if($("videoList"))renderFileList($("videoList"),videos)}
 async function loadHistory(){const rows=await rest(`arquivo_historico?cliente_id=eq.${currentClient.id}&select=*&order=created_at.desc&limit=100`);$("historyList").innerHTML=rows.length?rows.map(h=>`<div class="history-row"><strong>${escapeHtml(h.acao)}</strong><span>${escapeHtml(h.responsavel)} • ${dateView(h.created_at)}</span><small>${escapeHtml(h.detalhes||"")}</small></div>`).join(""):`<div class="empty">Nenhuma movimentação registrada.</div>`}
 
-function renderFolder(){renderFileList($("personalFileList"),documents.filter(d=>!d.contrato_id&&!d.deleted_at));$("contractList").innerHTML=contracts.length?contracts.map(c=>`<article class="contract-card"><div><h3>${escapeHtml(c.tipo)} ${c.subtipo?`• ${escapeHtml(c.subtipo)}`:""}</h3><p>${escapeHtml(c.numero_contrato_ade||"Sem contrato/ADE")} • ${escapeHtml(c.banco_financeira||"Banco não informado")}</p><small>Digitação: ${escapeHtml(c.responsavel_digitacao)} • ${dateView(c.created_at)}</small></div><button class="primary open-contract" data-id="${c.id}">Abrir arquivos</button></article>`).join(""):`<div class="empty">Nenhum contrato cadastrado.</div>`;updateTrash()}
+function renderFolder(){renderFileList($("personalFileList"),documents.filter(d=>!d.contrato_id&&!d.deleted_at&&!(d.mime_type||"").startsWith("video/")));$("contractList").innerHTML=contracts.length?contracts.map(c=>`<article class="contract-card"><div><h3>${escapeHtml(c.tipo)} ${c.subtipo?`• ${escapeHtml(c.subtipo)}`:""}</h3><p>${escapeHtml(c.numero_contrato_ade||"Sem contrato/ADE")} • ${escapeHtml(c.banco_financeira||"Banco não informado")}</p><small>Digitação: ${escapeHtml(c.responsavel_digitacao)} • ${dateView(c.created_at)}</small></div><button class="primary open-contract" data-id="${c.id}">Abrir arquivos</button></article>`).join(""):`<div class="empty">Nenhum contrato cadastrado.</div>`;updateTrash()}
 
 function renderFileList(target,list){target.innerHTML=list.length?list.map(d=>`<article class="file-row"><div><strong>${escapeHtml(d.nome_original)}</strong><br><small>${escapeHtml(d.categoria)} • ${sizeView(d.tamanho_bytes)} • ${escapeHtml(d.responsavel)}</small></div><div class="file-actions"><button data-action="view" data-id="${d.id}">Visualizar</button><button data-action="download" data-id="${d.id}">Baixar</button><button data-action="share" data-id="${d.id}">Compartilhar</button><button class="delete" data-action="trash" data-id="${d.id}">Apagar</button></div></article>`).join(""):`<div class="empty">Nenhum arquivo nesta área.</div>`}
 
@@ -67,9 +67,6 @@ $("personalGallery").onchange=()=>uploadFiles($("personalGallery"),$("personalCa
 $("personalCamera").onchange=()=>uploadFiles($("personalCamera"),$("personalCategory").value,$("personalResponsible").value);
 $("contractGallery").onchange=()=>uploadFiles($("contractGallery"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
 $("contractCamera").onchange=()=>uploadFiles($("contractCamera"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
-
-function openEpsonScanner(){window.location.href="creditiscan://abrir"}
-$("personalScannerBtn").onclick=openEpsonScanner;
-$("contractScannerBtn").onclick=openEpsonScanner;
+$("uploadVideoBtn").onclick=()=>uploadFiles($("videoFiles"),"Vídeo",$("videoResponsible").value);
 
 (async()=>{if(!await verify())return;try{await Promise.all([loadClients(),loadUsage()])}catch(e){showMessage(`Antes de usar, crie as tabelas no Supabase: ${e.message}`)}})();
