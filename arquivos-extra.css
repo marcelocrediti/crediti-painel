@@ -20,6 +20,7 @@
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .source-btn input {
