@@ -32,7 +32,15 @@
   background: #fffbea;
 }
 
+.video-upload-box {
+  grid-template-columns: 1fr 2fr auto;
+  margin-bottom: 8px;
+}
+
 @media (max-width: 720px) {
+  .video-upload-box {
+    grid-template-columns: 1fr;
+  }
   .source-buttons {
     display: grid;
     grid-template-columns: 1fr;
