@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffd400">
+  <title>Documentos dos Clientes | Crediti</title>
+  <link rel="stylesheet" href="arquivos.css?v=1">
+</head>
+<body>
+  <header class="topbar">
+    <div><strong>CREDITI</strong><span>Documentos dos Clientes</span></div>
+    <a href="index.html">Voltar ao painel</a>
+  </header>
+
+  <main>
+    <section class="usage-card">
+      <div><small>ARMAZENAMENTO PRIVADO</small><h1>Arquivo digital</h1></div>
+      <div class="usage-info"><strong id="usageText">Calculando...</strong><div class="usage-track"><i id="usageBar"></i></div><small id="usageAlert">10 GB gratuitos</small></div>
+    </section>
+
+    <section class="actions">
+      <label class="search"><span>Pesquisar cliente</span><input id="searchInput" placeholder="Digite o nome ou CPF" autocomplete="off"></label>
+      <button id="trashBtn" class="light">Lixeira <b id="trashCount">0</b></button>
+      <button id="newClientBtn" class="primary">+ Novo cliente</button>
+    </section>
+
+    <div id="message" class="message"></div>
+    <section id="clientList" class="client-grid"></section>
+  </main>
+
+  <dialog id="clientDialog">
+    <form id="clientForm" class="dialog-card">
+      <button type="button" class="close" data-close="clientDialog">×</button>
+      <p class="eyebrow">PASTA DO CLIENTE</p><h2 id="clientDialogTitle">Novo cliente</h2>
+      <div class="form-grid">
+        <label class="wide">Nome completo<input id="clientName" required></label>
+        <label>CPF<input id="clientCpf" inputmode="numeric" maxlength="14" required></label>
+        <label>WhatsApp<input id="clientPhone" inputmode="tel"></label>
+        <label>Cidade<input id="clientCity"></label>
+        <label class="wide">Observações<textarea id="clientNotes" rows="3"></textarea></label>
+      </div>
+      <button class="primary" type="submit">Salvar cliente</button>
+    </form>
+  </dialog>
+
+  <dialog id="folderDialog" class="folder-dialog">
+    <div class="dialog-card folder-card">
+      <button type="button" class="close" data-close="folderDialog">×</button>
+      <div class="folder-head"><div><p class="eyebrow">PASTA DO CLIENTE</p><h2 id="folderName"></h2><span id="folderCpf"></span></div><div><button id="editClientBtn" class="light">Editar</button><button id="newContractBtn" class="primary">+ Novo contrato</button></div></div>
+      <div class="tabs"><button class="active" data-tab="personal">Documentos pessoais</button><button data-tab="contracts">Contratos</button><button data-tab="history">Histórico</button></div>
+      <section id="personalTab" class="tab active">
+        <div class="upload-box"><select id="personalCategory"><option>RG</option><option>CPF</option><option>Comprovante de endereço</option><option>Contracheque</option><option>CNH</option><option>Outro documento</option></select><select id="personalResponsible"><option>Marcelino</option><option>Samila</option></select><input id="personalFiles" type="file" multiple><button id="uploadPersonalBtn" class="primary">Enviar documentos</button></div>
+        <div id="personalFileList" class="file-list"></div>
+      </section>
+      <section id="contractsTab" class="tab"><div id="contractList" class="contract-list"></div></section>
+      <section id="historyTab" class="tab"><div id="historyList" class="history-list"></div></section>
+    </div>
+  </dialog>
+
+  <dialog id="contractDialog">
+    <form id="contractForm" class="dialog-card">
+      <button type="button" class="close" data-close="contractDialog">×</button>
+      <p class="eyebrow">NOVA OPERAÇÃO</p><h2>Novo contrato</h2>
+      <div class="form-grid">
+        <label>Tipo de crédito<select id="contractType" required><option value="">Selecione</option><option>Portabilidade</option><option>Empréstimo novo</option><option>Refinanciamento INSS</option><option>Refinanciamento de veículo</option><option>Conta de luz</option><option>FGTS</option><option>Cartão consignado</option><option>Cartão benefício</option><option>Bolsa Família</option><option>Financiamento de veículo</option></select></label>
+        <label id="subtypeLabel" class="hidden">Veículo<select id="contractSubtype"><option>Carro</option><option>Moto</option></select></label>
+        <label>Número do contrato ou ADE<input id="contractNumber"></label>
+        <label>Banco ou financeira<input id="contractBank"></label>
+        <label>Data<input id="contractDate" type="date" required></label>
+        <label>Valor<input id="contractValue" inputmode="decimal"></label>
+        <label>Responsável pela digitação<select id="contractResponsible" required><option>Marcelino</option><option>Samila</option></select></label>
+        <label class="wide">Observações<textarea id="contractNotes" rows="3"></textarea></label>
+      </div>
+      <button class="primary" type="submit">Finalizar contrato</button>
+    </form>
+  </dialog>
+
+  <dialog id="contractFilesDialog">
+    <div class="dialog-card">
+      <button type="button" class="close" data-close="contractFilesDialog">×</button>
+      <p class="eyebrow">ARQUIVOS DA OPERAÇÃO</p><h2 id="contractFilesTitle"></h2>
+      <div class="upload-box"><select id="contractFileCategory"><option>Contrato</option><option>Vídeo da contratação</option><option>Foto</option><option>Comprovante</option><option>Outro arquivo</option></select><select id="contractFileResponsible"><option>Marcelino</option><option>Samila</option></select><input id="contractFiles" type="file" multiple><button id="uploadContractBtn" class="primary">Enviar arquivos</button></div>
+      <small>Vídeos: até 2 minutos e 30 MB. Os arquivos serão baixados individualmente, sem ZIP.</small>
+      <div id="contractFileList" class="file-list"></div>
+    </div>
+  </dialog>
+
+  <dialog id="trashDialog"><div class="dialog-card"><button type="button" class="close" data-close="trashDialog">×</button><p class="eyebrow">ARQUIVOS APAGADOS</p><h2>Lixeira</h2><div id="trashList" class="file-list"></div></div></dialog>
+  <script src="arquivos.js?v=1"></script>
+</body>
+</html>
