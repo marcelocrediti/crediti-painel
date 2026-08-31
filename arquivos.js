@@ -37,7 +37,8 @@ async function saveClient(e){e.preventDefault();const body={nome:$("clientName")
 
 async function openFolder(id){currentClient=clients.find(c=>c.id===id)||currentClient;if(!currentClient)return;$("folderName").textContent=currentClient.nome;$("folderCpf").textContent=`CPF: ${cpfView(currentClient.cpf)}`;await Promise.all([loadContracts(),loadDocuments(),loadHistory()]);renderFolder();$("folderDialog").showModal()}
 async function loadContracts(){contracts=await rest(`arquivo_contratos?cliente_id=eq.${currentClient.id}&select=*&order=created_at.desc`)}
-async function loadDocuments(){documents=await rest(`arquivo_documentos?cliente_id=eq.${currentClient.id}&select=*&order=created_at.desc`)}
+async function loadDocuments(){documents=await rest(`arquivo_documentos?cliente_id=eq.${currentClient.id}&select=*&order=created_at.desc`);renderVideos()}
+function renderVideos(){const videos=documents.filter(d=>!d.deleted_at&&(d.mime_type||"").startsWith("video/"));if($("videoList"))renderFileList($("videoList"),videos)}
 async function loadHistory(){const rows=await rest(`arquivo_historico?cliente_id=eq.${currentClient.id}&select=*&order=created_at.desc&limit=100`);$("historyList").innerHTML=rows.length?rows.map(h=>`<div class="history-row"><strong>${escapeHtml(h.acao)}</strong><span>${escapeHtml(h.responsavel)} • ${dateView(h.created_at)}</span><small>${escapeHtml(h.detalhes||"")}</small></div>`).join(""):`<div class="empty">Nenhuma movimentação registrada.</div>`}
 
 function renderFolder(){renderFileList($("personalFileList"),documents.filter(d=>!d.contrato_id&&!d.deleted_at));$("contractList").innerHTML=contracts.length?contracts.map(c=>`<article class="contract-card"><div><h3>${escapeHtml(c.tipo)} ${c.subtipo?`• ${escapeHtml(c.subtipo)}`:""}</h3><p>${escapeHtml(c.numero_contrato_ade||"Sem contrato/ADE")} • ${escapeHtml(c.banco_financeira||"Banco não informado")}</p><small>Digitação: ${escapeHtml(c.responsavel_digitacao)} • ${dateView(c.created_at)}</small></div><button class="primary open-contract" data-id="${c.id}">Abrir arquivos</button></article>`).join(""):`<div class="empty">Nenhum contrato cadastrado.</div>`;updateTrash()}
@@ -61,5 +62,18 @@ async function trashAction(action,id){const doc=documents.find(d=>d.id===id);if(
 document.addEventListener("click",async e=>{const client=e.target.closest(".client-card");if(client)return openFolder(client.dataset.id);if(e.target.matches("[data-close]"))return $(e.target.dataset.close).close();if(e.target.matches(".open-contract"))return openContractFiles(e.target.dataset.id);const file=e.target.closest("[data-action]");if(file){if(["restore","permanent"].includes(file.dataset.action))return trashAction(file.dataset.action,file.dataset.id);return fileAction(file.dataset.action,file.dataset.id)}if(e.target.matches(".tabs button")){document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));e.target.classList.add("active");$(`${e.target.dataset.tab}Tab`).classList.add("active")}});
 
 $("newClientBtn").onclick=openNewClient;$("editClientBtn").onclick=editClient;$("clientForm").onsubmit=saveClient;$("newContractBtn").onclick=newContract;$("contractForm").onsubmit=saveContract;$("searchInput").oninput=renderClients;$("contractType").onchange=()=>$("subtypeLabel").classList.toggle("hidden",!["Financiamento de veículo","Refinanciamento de veículo"].includes($("contractType").value));$("uploadPersonalBtn").onclick=()=>uploadFiles($("personalFiles"),$("personalCategory").value,$("personalResponsible").value);$("uploadContractBtn").onclick=()=>uploadFiles($("contractFiles"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);$("trashBtn").onclick=()=>$("trashDialog").showModal();
+
+$("personalGallery").onchange=()=>uploadFiles($("personalGallery"),$("personalCategory").value,$("personalResponsible").value);
+$("personalCamera").onchange=()=>uploadFiles($("personalCamera"),$("personalCategory").value,$("personalResponsible").value);
+$("contractGallery").onchange=()=>uploadFiles($("contractGallery"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
+$("contractCamera").onchange=()=>uploadFiles($("contractCamera"),$("contractFileCategory").value,$("contractFileResponsible").value,currentContract.id);
+
+function openScanner(){
+  alert("A impressora precisa ter scanner e estar instalada neste computador. O Windows abrirá a área de impressoras. Digitalize pelo aplicativo da impressora ou pelo Scanner do Windows, salve o arquivo e depois clique em Galeria ou arquivos para enviar.");
+  window.location.href="ms-settings:printers";
+}
+
+$("personalScannerBtn").onclick=openScanner;
+$("contractScannerBtn").onclick=openScanner;
 
 (async()=>{if(!await verify())return;try{await Promise.all([loadClients(),loadUsage()])}catch(e){showMessage(`Antes de usar, crie as tabelas no Supabase: ${e.message}`)}})();
