@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#FDCA01">
+  <title>Creator Ads | Painel Crediti</title>
+  <link rel="stylesheet" href="creator-ads.css?v=1">
+</head>
+<body>
+  <section id="loginView" class="login-wrap">
+    <div class="login-card">
+      <div class="brand">CREDITI</div>
+      <p class="eyebrow">PAINEL INTERNO</p>
+      <h1>Creator Ads</h1>
+      <p>Entre com o mesmo acesso administrativo do painel Crediti.</p>
+      <label>E-mail<input id="email" type="email" autocomplete="email"></label>
+      <label>Senha<input id="password" type="password" autocomplete="current-password"></label>
+      <button id="loginBtn" class="primary" type="button">Entrar</button>
+      <div id="loginMsg" class="msg" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <div id="appView" class="app hidden">
+    <header class="topbar">
+      <div><span class="brand small">CREDITI</span><strong>Creator Ads</strong></div>
+      <div class="top-actions"><a href="index.html">Painel principal</a><button id="refreshBtn" type="button">Atualizar</button><button id="logoutBtn" type="button">Sair</button></div>
+    </header>
+
+    <nav class="tabs" aria-label="Creator Ads">
+      <button data-tab="cadastros" class="active" type="button">Cadastros</button>
+      <button data-tab="campanhas" type="button">Campanhas</button>
+      <button data-tab="vencedores" type="button">Vencedores</button>
+      <button data-tab="pagamentos" type="button">Pagamentos</button>
+    </nav>
+
+    <main>
+      <section id="cadastros" class="panel active">
+        <div class="section-head"><div><h2>Cadastros</h2><p>Aprove, reprove ou exclua por perfil privado.</p></div><select id="profileFilter"><option value="">Todos</option><option value="em_analise">Em análise</option><option value="aprovado">Aprovado</option><option value="nao_elegivel">Não elegível</option><option value="perfil_privado">Perfil privado</option><option value="excluido_perfil_privado">Excluído por perfil privado</option></select></div>
+        <div id="profilesList" class="cards"></div>
+      </section>
+
+      <section id="campanhas" class="panel">
+        <div class="section-head"><div><h2>Campanhas</h2><p>Somente o administrador cria, edita, ativa e encerra.</p></div><button id="newCampaignBtn" class="primary compact" type="button">+ Nova campanha</button></div>
+        <div id="campaignsList" class="cards"></div>
+      </section>
+
+      <section id="vencedores" class="panel">
+        <div class="section-head"><div><h2>Vencedores</h2><p>Escolha o vencedor e acompanhe os vídeos enviados.</p></div></div>
+        <div id="submissionsList" class="cards"></div>
+      </section>
+
+      <section id="pagamentos" class="panel">
+        <div class="section-head"><div><h2>Pagamentos</h2><p>Confira Pix, banco e marque o pagamento realizado.</p></div></div>
+        <div id="paymentsList" class="cards"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="profileDialog"><form method="dialog" class="dialog-card"><button class="close" value="cancel" aria-label="Fechar">×</button><div id="profileDetail"></div></form></dialog>
+
+  <dialog id="campaignDialog"><form id="campaignForm" class="dialog-card"><button class="close" type="button" id="campaignClose" aria-label="Fechar">×</button><h2 id="campaignFormTitle">Nova campanha</h2><input type="hidden" name="id"><label>Título<input name="titulo" required></label><label>Descrição<textarea name="descricao" rows="2"></textarea></label><label>Briefing<textarea name="briefing" rows="5" required></textarea></label><div class="grid2"><label>Início<input name="inicio" type="datetime-local" required></label><label>Fim<input name="fim" type="datetime-local" required></label></div><div class="grid2"><label>Prêmio principal<input name="premio" inputmode="decimal" placeholder="10,00" required></label><label>Nº de vencedores<input name="numero_vencedores" type="number" min="1" value="1" required></label></div><label class="check"><input name="bonus_ativo" type="checkbox"> Ativar bônus por visualizações</label><div id="bonusFields" class="grid2 hidden"><label>Valor do bônus<input name="bonus_valor" inputmode="decimal" placeholder="20,00"></label><label>Meta de visualizações<input name="bonus_meta_views" type="number" min="1"></label><label>Prazo do bônus<input name="bonus_prazo" type="datetime-local"></label></div><div class="actions"><button type="button" class="secondary" id="saveDraftBtn">Salvar rascunho</button><button type="submit" class="primary">Salvar e ativar</button></div><div id="campaignMsg" class="msg"></div></form></dialog>
+
+  <script src="creator-ads-admin.js?v=1"></script>
+</body>
+</html>
