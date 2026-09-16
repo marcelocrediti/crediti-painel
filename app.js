@@ -2809,43 +2809,6 @@ $("sendCollectionBtn")
     sendCollectionWithWhatsApp
   );
 
-$("collectionLoginBtn")
-  .addEventListener(
-    "click",
-    loginCollections
-  );
-
-$("collectionLoginPassword")
-  .addEventListener(
-    "keydown",
-    (event) => {
-      if (event.key === "Enter") {
-        loginCollections();
-      }
-    }
-  );
-
-$("closeCollectionLoginDialog")
-  .addEventListener(
-    "click",
-    () => {
-      $("collectionLoginDialog").close();
-    }
-  );
-
-$("collectionLoginDialog")
-  .addEventListener(
-    "click",
-    (event) => {
-      if (
-        event.target ===
-        $("collectionLoginDialog")
-      ) {
-        $("collectionLoginDialog").close();
-      }
-    }
-  );
-
 $("collectionDialog")
   .addEventListener(
     "click",
