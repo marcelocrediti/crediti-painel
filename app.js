@@ -1854,6 +1854,28 @@ async function saveCurrentLead() {
       $("editStatus").value;
 
     if (
+      selectedStatus === "nao_aprovado" ||
+      selectedStatus === "finalizado"
+    ) {
+      const deleteResponse =
+        await fetch(
+          `${SUPABASE_REST}/leads?id=eq.${encodeURIComponent(
+            currentLeadId
+          )}`,
+          {
+            method: "DELETE",
+            headers: authHeaders()
+          }
+        );
+
+      if (!deleteResponse.ok) {
+        throw new Error(
+          "O status foi salvo, mas não foi possível retirar este registro."
+        );
+      }
+    }
+
+    if (
       CLOSED_LEAD_STATUSES.has(
         selectedStatus
       )
