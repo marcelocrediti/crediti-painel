@@ -36,10 +36,8 @@ let allCollections = [];
 let filteredCollections = [];
 let currentCollectionId = null;
 
-let collectionsAccessToken =
-  sessionStorage.getItem(
-    "crediti_collections_access_token"
-  ) || "";
+let collectionsAccessToken = "";
+
 
 let accessToken =
   localStorage.getItem("crediti_access_token") || "";
@@ -1942,77 +1940,19 @@ function lockCollections() {
   currentCollectionId = null;
 }
 
-function requestCollectionsAccess() {
-  $("collectionLoginPassword").value = "";
-  $("collectionLoginError").textContent = "";
-  $("collectionLoginDialog").showModal();
-
-  setTimeout(
-    () => $("collectionLoginPassword").focus(),
-    100
-  );
-}
-
-async function loginCollections() {
-  const email =
-    $("collectionLoginEmail").value.trim();
-
-  const password =
-    $("collectionLoginPassword").value;
-
-  $("collectionLoginError").textContent = "";
-
-  if (!password) {
-    $("collectionLoginError").textContent =
-      "Digite a senha exclusiva.";
-    return;
-  }
-
-  $("collectionLoginBtn").disabled = true;
-  $("collectionLoginBtn").textContent = "ENTRANDO...";
-
+async function authenticateCollections(email, password) {
+  if (!email || !password) return;
   try {
     const response = await fetch(
       `${COLLECTIONS_SUPABASE_AUTH}/token?grant_type=password`,
-      {
-        method: "POST",
-        headers: collectionPublicHeaders({
-          "Content-Type": "application/json"
-        }),
-        body: JSON.stringify({
-          email,
-          password
-        })
-      }
+      { method: "POST", headers: collectionPublicHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ email, password }) }
     );
-
     const data = await response.json();
-
-    if (!response.ok || !data.access_token) {
-      throw new Error("Senha exclusiva incorreta.");
+    if (response.ok && data.access_token) {
+      collectionsAccessToken = data.access_token;
+      sessionStorage.setItem("crediti_collections_access_token", collectionsAccessToken);
     }
-
-    collectionsAccessToken = data.access_token;
-
-    sessionStorage.setItem(
-      "crediti_collections_access_token",
-      collectionsAccessToken
-    );
-
-    $("collectionLoginPassword").value = "";
-    $("collectionLoginDialog").close();
-
-    showView("cobrancas");
-    await loadCollections();
-
-  } catch (error) {
-    console.error(error);
-    $("collectionLoginError").textContent = error.message;
-  } finally {
-    $("collectionLoginBtn").disabled = false;
-    $("collectionLoginBtn").textContent =
-      "ENTRAR EM COBRANÇAS";
-  }
+  } catch (error) { console.warn("Cobranças não autenticadas automaticamente.", error); }
 }
 
 async function loadCollections() {
@@ -2658,14 +2598,6 @@ function showView(view) {
 }
 
 function changeView(view) {
-  if (
-    view === "cobrancas" &&
-    !collectionsAccessToken
-  ) {
-    requestCollectionsAccess();
-    return;
-  }
-
   showView(view);
 
   if (view === "cobrancas") {
@@ -2715,6 +2647,16 @@ document.addEventListener(
     }
   }
 );
+
+$("togglePasswordBtn")?.addEventListener("click", () => {
+  const field = $("passwordInput");
+  if (!field) return;
+  const visible = field.type === "text";
+  field.type = visible ? "password" : "text";
+  $("togglePasswordBtn").textContent = visible ? "◉" : "◉̸";
+  $("togglePasswordBtn").setAttribute("aria-label", visible ? "Mostrar senha" : "Ocultar senha");
+  $("togglePasswordBtn").setAttribute("aria-pressed", String(!visible));
+});
 
 document
   .querySelectorAll(
@@ -2865,43 +2807,6 @@ $("sendCollectionBtn")
   .addEventListener(
     "click",
     sendCollectionWithWhatsApp
-  );
-
-$("collectionLoginBtn")
-  .addEventListener(
-    "click",
-    loginCollections
-  );
-
-$("collectionLoginPassword")
-  .addEventListener(
-    "keydown",
-    (event) => {
-      if (event.key === "Enter") {
-        loginCollections();
-      }
-    }
-  );
-
-$("closeCollectionLoginDialog")
-  .addEventListener(
-    "click",
-    () => {
-      $("collectionLoginDialog").close();
-    }
-  );
-
-$("collectionLoginDialog")
-  .addEventListener(
-    "click",
-    (event) => {
-      if (
-        event.target ===
-        $("collectionLoginDialog")
-      ) {
-        $("collectionLoginDialog").close();
-      }
-    }
   );
 
 $("collectionDialog")
