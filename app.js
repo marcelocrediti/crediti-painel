@@ -29,6 +29,9 @@ let allLeads = [];
 let filteredLeads = [];
 let currentLeadId = null;
 
+let allAppEvents = [];
+let resultsPeriodDays = 30;
+
 let allCollections = [];
 let filteredCollections = [];
 let currentCollectionId = null;
@@ -804,8 +807,51 @@ async function loadLeads() {
   }
 }
 
+async function loadAppEvents() {
+  if (!accessToken) {
+    return;
+  }
+
+  try {
+    const oldestDate = new Date();
+    oldestDate.setDate(oldestDate.getDate() - 90);
+
+    const response = await fetch(
+      `${SUPABASE_REST}/crediti_app_events?select=*&event_time=gte.${encodeURIComponent(
+        oldestDate.toISOString()
+      )}&order=event_time.desc&limit=5000`,
+      {
+        headers: authHeaders()
+      }
+    );
+
+    if (
+      response.status === 401 ||
+      response.status === 403
+    ) {
+      logout();
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        "Não foi possível carregar os resultados do aplicativo."
+      );
+    }
+
+    allAppEvents = Array.isArray(data) ? data : [];
+    renderResults();
+  } catch (error) {
+    console.error(error);
+    allAppEvents = [];
+    renderResults(error.message);
+  }
+}
+
 async function loadPanelData() {
-  const tasks = [loadLeads()];
+  const tasks = [loadLeads(), loadAppEvents()];
 
   if (collectionsAccessToken) {
     tasks.push(loadCollections());
@@ -1219,6 +1265,169 @@ function renderDashboard() {
 
   renderRecent();
   renderRanking();
+}
+
+
+/* =========================================================
+   RESULTADOS DO APP CREDITI
+========================================================= */
+
+function getEventsForPeriod() {
+  const start = new Date();
+  start.setDate(start.getDate() - resultsPeriodDays);
+
+  return allAppEvents.filter((event) => {
+    const date = new Date(event.event_time || event.created_at);
+    return !Number.isNaN(date.getTime()) && date >= start;
+  });
+}
+
+function countEvents(events, eventName) {
+  return events.filter(
+    (event) => event.event_name === eventName
+  ).length;
+}
+
+function normalizeTrafficSource(source) {
+  const normalized = normalizeText(source || "direto");
+
+  const names = {
+    meta: "Meta Ads",
+    facebook: "Facebook",
+    instagram: "Instagram",
+    google: "Google",
+    direto: "Acesso direto"
+  };
+
+  return names[normalized] || source || "Acesso direto";
+}
+
+function getEventPresentation(event) {
+  const presentations = {
+    app_open: ["Abriu o App Crediti", "Visita"],
+    search: ["Fez uma busca", event.search_term || "Busca"],
+    product_view: ["Visualizou um produto", event.product || "Produto"],
+    service_click: ["Abriu um serviço", event.product || "Serviço"],
+    partner_click: ["Continuou para um parceiro", event.product || "Crédito"],
+    whatsapp_click: ["Chamou a Crediti no WhatsApp", event.product || "Atendimento"],
+    ai_chat_started: ["Iniciou conversa com a Crediti IA", event.product || "Atendimento"],
+    lead_created: ["Virou um lead identificado", event.product || "Atendimento"]
+  };
+
+  return presentations[event.event_name] || ["Ação no aplicativo", "App Crediti"];
+}
+
+function renderResultsRanking(targetId, entries, emptyMessage) {
+  $(targetId).innerHTML = entries
+    .slice(0, 8)
+    .map(
+      ([label, total]) => `
+        <div class="ranking-item">
+          <span>${escapeHtml(label)}</span>
+          <strong>${total}</strong>
+        </div>
+      `
+    )
+    .join("") || `<div class="empty">${escapeHtml(emptyMessage)}</div>`;
+}
+
+function renderResults(errorMessage = "") {
+  const events = getEventsForPeriod();
+  const visits = events.filter(
+    (event) => event.event_name === "app_open"
+  );
+  const people = new Set(
+    visits.map((event) => event.visitor_id).filter(Boolean)
+  ).size;
+  const searches = countEvents(events, "search");
+  const productViews = countEvents(events, "product_view");
+  const partnerClicks = countEvents(events, "partner_click");
+  const whatsappClicks = countEvents(events, "whatsapp_click");
+  const aiStarts = countEvents(events, "ai_chat_started");
+  const leads = countEvents(events, "lead_created");
+
+  $("resultVisits").textContent = visits.length;
+  $("resultPeople").textContent = people;
+  $("resultSearches").textContent = searches;
+  $("resultProducts").textContent = productViews;
+  $("resultPartners").textContent = partnerClicks;
+  $("resultLeads").textContent = leads;
+
+  if (errorMessage) {
+    $("resultsSummaryTitle").textContent = "Os resultados não puderam ser carregados.";
+    $("resultsSummaryText").textContent = errorMessage;
+  } else if (!events.length) {
+    $("resultsSummaryTitle").textContent = "A medição começou agora.";
+    $("resultsSummaryText").textContent =
+      "As próximas visitas e ações do App Crediti aparecerão automaticamente aqui.";
+  } else {
+    $("resultsSummaryTitle").textContent =
+      `${people} ${people === 1 ? "pessoa abriu" : "pessoas abriram"} o aplicativo.`;
+
+    $("resultsSummaryText").textContent =
+      `Foram ${searches} buscas, ${productViews} produtos visualizados, ${partnerClicks} encaminhamentos para parceiros, ${whatsappClicks} contatos pelo WhatsApp e ${aiStarts} conversas iniciadas com a Crediti IA.`;
+  }
+
+  const productCounts = {};
+
+  events.forEach((event) => {
+    if (!event.product) return;
+
+    productCounts[event.product] =
+      (productCounts[event.product] || 0) + 1;
+  });
+
+  renderResultsRanking(
+    "resultsProductsRanking",
+    Object.entries(productCounts).sort((a, b) => b[1] - a[1]),
+    "Nenhum produto procurado ainda."
+  );
+
+  const sourceCounts = {};
+
+  visits.forEach((event) => {
+    const source = normalizeTrafficSource(event.traffic_source);
+    sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+  });
+
+  renderResultsRanking(
+    "resultsSourcesRanking",
+    Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]),
+    "A origem das próximas visitas aparecerá aqui."
+  );
+
+  const metaVisits = visits.filter((event) =>
+    ["meta", "facebook", "instagram"].includes(
+      normalizeText(event.traffic_source)
+    )
+  ).length;
+
+  $("metaResultsNote").textContent = metaVisits
+    ? `${metaVisits} ${metaVisits === 1 ? "visita foi identificada" : "visitas foram identificadas"} como vinda da Meta. Alcance, investimento e custo por resultado serão acrescentados após a conexão segura da conta de anúncios.`
+    : "As visitas identificadas como Meta aparecerão acima. Alcance, investimento e custo por resultado serão acrescentados após a conexão segura da conta de anúncios.";
+
+  const recent = events.slice(0, 30);
+
+  $("resultsActivity").innerHTML = recent
+    .map((event) => {
+      const [title, detail] = getEventPresentation(event);
+
+      return `
+        <article class="result-activity-item">
+          <div>
+            <strong>${escapeHtml(title)}</strong>
+            <span>${escapeHtml(detail)} · ${escapeHtml(normalizeTrafficSource(event.traffic_source))}</span>
+          </div>
+          <small>${escapeHtml(fmtDate(event.event_time || event.created_at))}</small>
+        </article>
+      `;
+    })
+    .join("");
+
+  $("resultsEmptyState").classList.toggle(
+    "hidden",
+    recent.length > 0
+  );
 }
 
 function renderRecent() {
@@ -2440,6 +2649,7 @@ function showView(view) {
   const titles = {
     dashboard: "Dashboard",
     leads: "Clientes / Leads",
+    resultados: "Resultados",
     cobrancas: "Cobranças"
   };
 
@@ -2460,6 +2670,10 @@ function changeView(view) {
 
   if (view === "cobrancas") {
     loadCollections();
+  }
+
+  if (view === "resultados") {
+    renderResults();
   }
 }
 
@@ -2568,6 +2782,15 @@ $("refreshBtn")
   .addEventListener(
     "click",
     loadPanelData
+  );
+
+$("resultsPeriod")
+  .addEventListener(
+    "change",
+    (event) => {
+      resultsPeriodDays = Number(event.target.value) || 30;
+      renderResults();
+    }
   );
 
 $("searchInput")

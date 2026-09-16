@@ -573,6 +573,168 @@ button {
 
 
 /* =========================================================
+   RESULTADOS DO APP CREDITI
+========================================================= */
+
+.results-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.results-toolbar h2 {
+  margin: 3px 0 5px;
+  font-size: 27px;
+  letter-spacing: -0.7px;
+}
+
+.results-toolbar p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.results-period-label {
+  display: grid;
+  gap: 6px;
+  min-width: 190px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.results-period-label select {
+  width: 100%;
+  height: 46px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--black);
+  font-weight: 800;
+  text-transform: none;
+}
+
+.results-summary {
+  margin-bottom: 18px;
+  padding: 22px 24px;
+  border: 1px solid #e4ba00;
+  border-radius: var(--radius);
+  background: var(--yellow);
+  color: var(--black);
+}
+
+.results-summary span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+}
+
+.results-summary strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 25px;
+  line-height: 1.2;
+}
+
+.results-summary p {
+  margin: 0;
+  max-width: 900px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.results-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.results-cards .metric-card small {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.results-activity-panel {
+  margin-bottom: 18px;
+}
+
+.results-activity {
+  display: grid;
+  gap: 9px;
+}
+
+.result-activity-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-soft);
+}
+
+.result-activity-item div {
+  min-width: 0;
+}
+
+.result-activity-item strong,
+.result-activity-item span {
+  display: block;
+}
+
+.result-activity-item strong {
+  margin-bottom: 3px;
+  font-size: 14px;
+}
+
+.result-activity-item span,
+.result-activity-item small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.result-activity-item small {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.meta-results-note {
+  padding: 18px 20px;
+  border: 1px solid #d9d9d3;
+  border-radius: 15px;
+  background: #f0f0ed;
+}
+
+.meta-results-note strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.meta-results-note p {
+  margin: 0;
+  color: #5f5f58;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
    LEADS RECENTES
 ========================================================= */
 
@@ -1402,7 +1564,7 @@ dialog::backdrop {
 
   .sidebar nav {
     grid-template-columns:
-      repeat(3, minmax(0, 1fr));
+      repeat(2, minmax(0, 1fr));
 
     gap: 8px;
   }
@@ -1412,6 +1574,15 @@ dialog::backdrop {
 
     text-align: center;
 
+    font-size: 13px;
+  }
+
+  .sidebar .nav-link-item {
+    margin: 0;
+    padding: 13px 10px;
+    border-radius: 14px;
+    color: #deded8;
+    text-align: center;
     font-size: 13px;
   }
 
@@ -1471,6 +1642,47 @@ dialog::backdrop {
     grid-template-columns: 1fr;
 
     gap: 13px;
+  }
+
+  .results-toolbar {
+    display: grid;
+    align-items: stretch;
+    gap: 13px;
+  }
+
+  .results-toolbar h2 {
+    font-size: 23px;
+  }
+
+  .results-period-label {
+    min-width: 0;
+  }
+
+  .results-summary {
+    padding: 18px;
+  }
+
+  .results-summary strong {
+    font-size: 21px;
+  }
+
+  .results-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .results-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .result-activity-item {
+    display: grid;
+    gap: 7px;
+  }
+
+  .result-activity-item small {
+    text-align: left;
   }
 
   .panel {

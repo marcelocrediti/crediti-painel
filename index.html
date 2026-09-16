@@ -17,7 +17,7 @@
 
   <link
     rel="stylesheet"
-    href="styles.css?v=12"
+    href="styles.css?v=13"
   />
 </head>
 
@@ -144,6 +144,14 @@
           type="button"
         >
           Clientes / Leads
+        </button>
+
+        <button
+          class="nav-item"
+          data-view="resultados"
+          type="button"
+        >
+          Resultados
         </button>
 
         <a
@@ -336,6 +344,121 @@
           </section>
 
         </div>
+
+      </section>
+
+
+      <!-- =================================================
+           RESULTADOS DO APP CREDITI
+      ================================================== -->
+
+      <section
+        id="resultadosView"
+        class="view"
+      >
+
+        <div class="results-toolbar">
+          <div>
+            <p class="eyebrow">ACOMPANHAMENTO AUTOMÁTICO</p>
+            <h2>O que aconteceu no App Crediti</h2>
+            <p>Visitas e ações importantes, explicadas de forma simples.</p>
+          </div>
+
+          <label class="results-period-label">
+            Período
+            <select id="resultsPeriod">
+              <option value="7">Últimos 7 dias</option>
+              <option value="30" selected>Últimos 30 dias</option>
+              <option value="90">Últimos 90 dias</option>
+            </select>
+          </label>
+        </div>
+
+        <section class="results-summary" aria-live="polite">
+          <span>RESUMO</span>
+          <strong id="resultsSummaryTitle">Carregando resultados...</strong>
+          <p id="resultsSummaryText">Aguarde enquanto organizamos as informações.</p>
+        </section>
+
+        <div class="results-cards">
+          <article class="metric-card">
+            <span>Visitas ao aplicativo</span>
+            <strong id="resultVisits">0</strong>
+            <small id="resultVisitsHelp">Aberturas registradas</small>
+          </article>
+
+          <article class="metric-card">
+            <span>Pessoas</span>
+            <strong id="resultPeople">0</strong>
+            <small>Visitantes sem identificar nome</small>
+          </article>
+
+          <article class="metric-card">
+            <span>Buscas realizadas</span>
+            <strong id="resultSearches">0</strong>
+            <small>O que as pessoas procuraram</small>
+          </article>
+
+          <article class="metric-card">
+            <span>Produtos visualizados</span>
+            <strong id="resultProducts">0</strong>
+            <small>Aberturas das páginas de produtos</small>
+          </article>
+
+          <article class="metric-card">
+            <span>Encaminhados a parceiros</span>
+            <strong id="resultPartners">0</strong>
+            <small>Cliques para continuar no banco</small>
+          </article>
+
+          <article class="metric-card">
+            <span>Leads identificados</span>
+            <strong id="resultLeads">0</strong>
+            <small>Nome e contato recebidos pela IA</small>
+          </article>
+        </div>
+
+        <div class="results-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Produtos mais procurados</h2>
+                <p>Visualizações, buscas e encaminhamentos.</p>
+              </div>
+            </div>
+            <div id="resultsProductsRanking" class="ranking"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>De onde vieram</h2>
+                <p>Origem identificada na chegada ao aplicativo.</p>
+              </div>
+            </div>
+            <div id="resultsSourcesRanking" class="ranking"></div>
+          </section>
+        </div>
+
+        <section class="panel results-activity-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Atividade recente</h2>
+              <p>As últimas ações importantes, sem CPF ou dados financeiros.</p>
+            </div>
+          </div>
+          <div id="resultsActivity" class="results-activity"></div>
+          <div id="resultsEmptyState" class="empty hidden">
+            Ainda não existem ações registradas neste período.
+          </div>
+        </section>
+
+        <section class="meta-results-note">
+          <strong>Anúncios da Meta</strong>
+          <p id="metaResultsNote">
+            As visitas identificadas como Meta já aparecem acima. Alcance, investimento e custo por resultado serão exibidos após a conexão segura da conta de anúncios.
+          </p>
+        </section>
 
       </section>
 
@@ -1086,7 +1209,7 @@
   </dialog>
 
 
-  <script src="app.js?v=12"></script>
+  <script src="app.js?v=13"></script>
 
 </body>
 </html>
