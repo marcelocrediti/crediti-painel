@@ -34,6 +34,12 @@ let refreshToken =
 
 let recoveryMode = false;
 
+const CLOSED_LEAD_STATUSES = new Set([
+  "aprovado",
+  "nao_aprovado",
+  "finalizado"
+]);
+
 const $ = (id) =>
   document.getElementById(id);
 
@@ -195,6 +201,19 @@ function getLeadOrigin(lead) {
 
 function getLeadNotes(lead) {
   return lead.observacao || "";
+}
+
+function isActiveCreditiIaLead(lead) {
+  const origin = normalizeText(
+    getLeadOrigin(lead)
+  ).replace(/\s+/g, "_");
+
+  return (
+    origin === "crediti_ia" &&
+    !CLOSED_LEAD_STATUSES.has(
+      getLeadStatus(lead)
+    )
+  );
 }
 
 function formatPhone(value = "") {
@@ -753,7 +772,7 @@ async function loadLeads() {
 
     allLeads =
       Array.isArray(data)
-        ? data
+        ? data.filter(isActiveCreditiIaLead)
         : [];
 
     populateProductFilter();
@@ -1260,11 +1279,13 @@ function normalizeTrafficSource(source) {
   const normalized = normalizeText(source || "direto");
 
   const names = {
-    meta: "Meta Ads",
+    meta: "Anúncios da Meta",
     facebook: "Facebook",
     instagram: "Instagram",
     google: "Google",
-    direto: "Acesso direto"
+    direto: "Acesso direto: link ou ícone do aplicativo",
+    directo: "Acesso direto: link ou ícone do aplicativo",
+    direct: "Acesso direto: link ou ícone do aplicativo"
   };
 
   return names[normalized] || source || "Acesso direto";
@@ -1756,8 +1777,20 @@ async function saveCurrentLead() {
       }
     );
 
-    $("dialogMessage").textContent =
-      "Alterações salvas com sucesso.";
+    const selectedStatus =
+      $("editStatus").value;
+
+    if (
+      CLOSED_LEAD_STATUSES.has(
+        selectedStatus
+      )
+    ) {
+      $("leadDialog").close();
+      currentLeadId = null;
+    } else {
+      $("dialogMessage").textContent =
+        "Alterações salvas com sucesso.";
+    }
 
     await loadLeads();
 
