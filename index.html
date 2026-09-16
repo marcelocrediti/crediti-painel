@@ -477,6 +477,39 @@
 
         <section class="panel">
 
+          <div class="lead-drawer-head">
+
+            <div>
+              <h2>Clientes da Crediti IA</h2>
+              <p id="leadListDescription">
+                Somente leads novos ou em atendimento recebidos pela Crediti IA.
+              </p>
+            </div>
+
+            <div class="lead-drawers" aria-label="Pastas de clientes">
+
+              <button
+                class="lead-drawer-btn active"
+                data-lead-drawer="ativos"
+                type="button"
+              >
+                Leads ativos
+                <strong id="activeDrawerCount">0</strong>
+              </button>
+
+              <button
+                class="lead-drawer-btn"
+                data-lead-drawer="aprovados"
+                type="button"
+              >
+                Aprovados
+                <strong id="approvedDrawerCount">0</strong>
+              </button>
+
+            </div>
+
+          </div>
+
           <!-- FILTROS -->
 
           <div class="filters">
@@ -525,18 +558,6 @@
 
               <option value="proposta_enviada">
                 Proposta enviada
-              </option>
-
-              <option value="aprovado">
-                Aprovado
-              </option>
-
-              <option value="nao_aprovado">
-                Não aprovado
-              </option>
-
-              <option value="finalizado">
-                Finalizado
               </option>
 
             </select>
@@ -1155,7 +1176,7 @@
 
 
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 
 </body>
 </html>
