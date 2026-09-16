@@ -15,6 +15,8 @@ const PANEL_URL =
 
 let allLeads = [];
 let filteredLeads = [];
+let approvedLeads = [];
+let leadListMode = "ativos";
 let currentLeadId = null;
 
 let allAppEvents = [];
@@ -214,6 +216,18 @@ function isActiveCreditiIaLead(lead) {
       getLeadStatus(lead)
     )
   );
+}
+
+function isCreditiIaLead(lead) {
+  return normalizeText(
+    getLeadOrigin(lead)
+  ).replace(/\s+/g, "_") === "crediti_ia";
+}
+
+function getVisibleLeadSource() {
+  return leadListMode === "aprovados"
+    ? approvedLeads
+    : allLeads;
 }
 
 function formatPhone(value = "") {
@@ -770,11 +784,24 @@ async function loadLeads() {
       );
     }
 
-    allLeads =
+    const creditiIaLeads =
       Array.isArray(data)
-        ? data.filter(isActiveCreditiIaLead)
+        ? data.filter(isCreditiIaLead)
         : [];
 
+    allLeads =
+      creditiIaLeads.filter(
+        isActiveCreditiIaLead
+      );
+
+    approvedLeads =
+      creditiIaLeads.filter(
+        (lead) =>
+          getLeadStatus(lead) ===
+          "aprovado"
+      );
+
+    updateLeadDrawers();
     populateProductFilter();
     applyFilters();
     renderDashboard();
@@ -858,7 +885,7 @@ function populateProductFilter() {
 
   const products = [
     ...new Set(
-      allLeads
+      getVisibleLeadSource()
         .map(getLeadProduct)
         .filter(
           (product) =>
@@ -905,7 +932,7 @@ function applyFilters() {
     $("responsibleFilter").value;
 
   filteredLeads =
-    allLeads.filter(
+    getVisibleLeadSource().filter(
       (lead) => {
 
         const text =
@@ -969,6 +996,49 @@ function applyFilters() {
     );
 
   renderLeads();
+}
+
+function updateLeadDrawers() {
+  $("activeDrawerCount").textContent =
+    allLeads.length;
+
+  $("approvedDrawerCount").textContent =
+    approvedLeads.length;
+}
+
+function setLeadListMode(mode) {
+  leadListMode =
+    mode === "aprovados"
+      ? "aprovados"
+      : "ativos";
+
+  document
+    .querySelectorAll("[data-lead-drawer]")
+    .forEach(
+      (button) =>
+        button.classList.toggle(
+          "active",
+          button.dataset.leadDrawer ===
+            leadListMode
+        )
+    );
+
+  $("statusFilter").value = "";
+  $("statusFilter").disabled =
+    leadListMode === "aprovados";
+
+  $("leadListDescription").textContent =
+    leadListMode === "aprovados"
+      ? "Clientes aprovados que contrataram."
+      : "Somente leads novos ou em atendimento recebidos pela Crediti IA.";
+
+  $("emptyState").textContent =
+    leadListMode === "aprovados"
+      ? "Nenhum cliente aprovado ainda."
+      : "Nenhum lead ativo no momento.";
+
+  populateProductFilter();
+  applyFilters();
 }
 
 
@@ -1526,7 +1596,10 @@ function renderRanking() {
 ========================================================= */
 
 function findLeadById(id) {
-  return allLeads.find(
+  return [
+    ...allLeads,
+    ...approvedLeads
+  ].find(
     (lead) =>
       String(lead.id) ===
       String(id)
@@ -2733,6 +2806,19 @@ $("responsibleFilter")
   .addEventListener(
     "change",
     applyFilters
+  );
+
+document
+  .querySelectorAll("[data-lead-drawer]")
+  .forEach(
+    (button) =>
+      button.addEventListener(
+        "click",
+        () =>
+          setLeadListMode(
+            button.dataset.leadDrawer
+          )
+      )
   );
 
 $("collectionSearchInput")
