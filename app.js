@@ -10,18 +10,6 @@ const SUPABASE_AUTH =
 const SUPABASE_KEY =
   "sb_publishable_dmoTPKmglghAohv0MrRA9A_2zlUYhER";
 
-const COLLECTIONS_SUPABASE_BASE =
-  "https://taxdccpyswsqtklibenp.supabase.co";
-
-const COLLECTIONS_SUPABASE_REST =
-  `${COLLECTIONS_SUPABASE_BASE}/rest/v1`;
-
-const COLLECTIONS_SUPABASE_AUTH =
-  `${COLLECTIONS_SUPABASE_BASE}/auth/v1`;
-
-const COLLECTIONS_SUPABASE_KEY =
-  "sb_publishable_wg_r1CZxd0vEG_yFsJ0fpA_4byqtC4f";
-
 const PANEL_URL =
   "https://marcelocrediti.github.io/crediti-painel/";
 
@@ -36,7 +24,6 @@ let allCollections = [];
 let filteredCollections = [];
 let currentCollectionId = null;
 
-let collectionsAccessToken = "";
 
 
 let accessToken =
@@ -288,18 +275,7 @@ function publicHeaders(extra = {}) {
 }
 
 function collectionAuthHeaders(extra = {}) {
-  return {
-    apikey: COLLECTIONS_SUPABASE_KEY,
-    Authorization: `Bearer ${collectionsAccessToken}`,
-    ...extra
-  };
-}
-
-function collectionPublicHeaders(extra = {}) {
-  return {
-    apikey: COLLECTIONS_SUPABASE_KEY,
-    ...extra
-  };
+  return authHeaders(extra);
 }
 
 function clearLoginMessages() {
@@ -727,10 +703,6 @@ function logout() {
   filteredCollections = [];
   currentCollectionId = null;
 
-  collectionsAccessToken = "";
-  sessionStorage.removeItem(
-    "crediti_collections_access_token"
-  );
 
   window.location.href =
     PANEL_URL;
@@ -849,13 +821,11 @@ async function loadAppEvents() {
 }
 
 async function loadPanelData() {
-  const tasks = [loadLeads(), loadAppEvents()];
-
-  if (collectionsAccessToken) {
-    tasks.push(loadCollections());
-  }
-
-  await Promise.all(tasks);
+  await Promise.all([
+    loadLeads(),
+    loadAppEvents(),
+    loadCollections()
+  ]);
 }
 
 
@@ -1928,33 +1898,6 @@ async function deleteCurrentLead() {
    COBRANÇAS
 ========================================================= */
 
-function lockCollections() {
-  collectionsAccessToken = "";
-
-  sessionStorage.removeItem(
-    "crediti_collections_access_token"
-  );
-
-  allCollections = [];
-  filteredCollections = [];
-  currentCollectionId = null;
-}
-
-async function authenticateCollections(email, password) {
-  if (!email || !password) return;
-  try {
-    const response = await fetch(
-      `${COLLECTIONS_SUPABASE_AUTH}/token?grant_type=password`,
-      { method: "POST", headers: collectionPublicHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ email, password }) }
-    );
-    const data = await response.json();
-    if (response.ok && data.access_token) {
-      collectionsAccessToken = data.access_token;
-      sessionStorage.setItem("crediti_collections_access_token", collectionsAccessToken);
-    }
-  } catch (error) { console.warn("Cobranças não autenticadas automaticamente.", error); }
-}
-
 async function loadCollections() {
   if (!accessToken) {
     return;
@@ -1962,7 +1905,7 @@ async function loadCollections() {
 
   try {
     const response = await fetch(
-      `${COLLECTIONS_SUPABASE_REST}/cobrancas?select=*&order=created_at.desc`,
+      `${SUPABASE_REST}/cobrancas?select=*&order=created_at.desc`,
       {
         headers: collectionAuthHeaders()
       }
@@ -1972,7 +1915,7 @@ async function loadCollections() {
       response.status === 401 ||
       response.status === 403
     ) {
-      lockCollections();
+      logout();
       return;
     }
 
@@ -1980,7 +1923,7 @@ async function loadCollections() {
 
     if (!response.ok) {
       throw new Error(
-        "A área de cobranças ainda precisa ser ativada no Supabase."
+        "Não foi possível carregar as cobranças."
       );
     }
 
@@ -2311,8 +2254,8 @@ async function saveCollection() {
   try {
     const isEditing = currentCollectionId !== null;
     const url = isEditing
-      ? `${COLLECTIONS_SUPABASE_REST}/cobrancas?id=eq.${encodeURIComponent(currentCollectionId)}`
-      : `${COLLECTIONS_SUPABASE_REST}/cobrancas`;
+      ? `${SUPABASE_REST}/cobrancas?id=eq.${encodeURIComponent(currentCollectionId)}`
+      : `${SUPABASE_REST}/cobrancas`;
 
     const response = await fetch(
       url,
@@ -2380,7 +2323,7 @@ async function deleteCollection() {
 
   try {
     const response = await fetch(
-      `${COLLECTIONS_SUPABASE_REST}/cobrancas?id=eq.${encodeURIComponent(currentCollectionId)}`,
+      `${SUPABASE_REST}/cobrancas?id=eq.${encodeURIComponent(currentCollectionId)}`,
       {
         method: "DELETE",
         headers: collectionAuthHeaders()
@@ -2408,7 +2351,7 @@ async function loadCollectionHistory(collectionId) {
 
   try {
     const response = await fetch(
-      `${COLLECTIONS_SUPABASE_REST}/cobranca_eventos?select=*&cobranca_id=eq.${encodeURIComponent(collectionId)}&order=created_at.desc`,
+      `${SUPABASE_REST}/cobranca_eventos?select=*&cobranca_id=eq.${encodeURIComponent(collectionId)}&order=created_at.desc`,
       {
         headers: collectionAuthHeaders()
       }
@@ -2453,7 +2396,7 @@ async function addCollectionHistory() {
 
   try {
     const response = await fetch(
-      `${COLLECTIONS_SUPABASE_REST}/cobranca_eventos`,
+      `${SUPABASE_REST}/cobranca_eventos`,
       {
         method: "POST",
         headers: collectionAuthHeaders({
@@ -2481,7 +2424,7 @@ async function addCollectionHistory() {
 async function registerPreparedMessage(collectionId) {
   try {
     await fetch(
-      `${COLLECTIONS_SUPABASE_REST}/cobranca_eventos`,
+      `${SUPABASE_REST}/cobranca_eventos`,
       {
         method: "POST",
         headers: collectionAuthHeaders({
